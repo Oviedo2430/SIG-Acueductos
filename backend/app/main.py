@@ -96,12 +96,14 @@ from app.routers.usuarios import router as usuarios_router
 from app.routers.red import router as red_router
 from app.routers.importacion import router as importacion_router
 from app.routers.simulacion import router as simulacion_router
+from app.routers.reportes import router as reportes_router
 
 app.include_router(auth_router,        prefix=settings.API_V1_PREFIX)
 app.include_router(usuarios_router,    prefix=settings.API_V1_PREFIX)
 app.include_router(red_router,         prefix=settings.API_V1_PREFIX)
 app.include_router(importacion_router, prefix=settings.API_V1_PREFIX)
 app.include_router(simulacion_router,  prefix=settings.API_V1_PREFIX)
+app.include_router(reportes_router,    prefix=settings.API_V1_PREFIX)
 
 
 # ── Health check ────────────────────────────────
