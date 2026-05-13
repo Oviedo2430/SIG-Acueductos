@@ -1,0 +1,81 @@
+import { useState } from 'react'
+import MapViewer from '../components/Map/MapViewer'
+import { useMapStore, LAYERS } from '../store/mapStore'
+
+export default function MapPage() {
+  const [selectedFeature, setSelectedFeature] = useState(null)
+  const { colorBy, setColorBy } = useMapStore()
+
+  return (
+    <div style={{ position: 'relative', height: 'calc(100vh - var(--topbar-h))', width: '100%' }}>
+      <MapViewer onFeatureClick={setSelectedFeature} />
+
+      {/* Panel de control flotante */}
+      <div style={{
+        position: 'absolute', top: 12, right: 52, zIndex: 10,
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)', padding: '10px 14px',
+        boxShadow: 'var(--shadow-lg)', minWidth: 180,
+      }}>
+        <div className="text-xs text-muted" style={{ marginBottom: 6, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+          Colorear por
+        </div>
+        {[
+          { value: 'none',     label: 'Sin coloración' },
+          { value: 'estado',   label: 'Estado físico' },
+          { value: 'material', label: 'Material' },
+          { value: 'presion',  label: 'Presión (sim.)' },
+        ].map(({ value, label }) => (
+          <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, cursor: 'pointer', fontSize: 13 }}>
+            <input type="radio" name="colorBy" value={value} checked={colorBy === value} onChange={() => setColorBy(value)} />
+            {label}
+          </label>
+        ))}
+      </div>
+
+      {/* Panel de feature seleccionado */}
+      {selectedFeature && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)', padding: '14px',
+          boxShadow: 'var(--shadow-lg)', minWidth: 240, maxWidth: 320,
+          animation: 'fadeIn .2s ease',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+              {LAYERS[selectedFeature._layer]?.icon} {selectedFeature.codigo || selectedFeature.nombre}
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFeature(null)}>✕</button>
+          </div>
+          {Object.entries(selectedFeature)
+            .filter(([k]) => !['_layer', 'id'].includes(k))
+            .map(([k, v]) => (
+              <div key={k} className="map-popup-row" style={{ marginBottom: 5 }}>
+                <span className="map-popup-key">{k}</span>
+                <span className="map-popup-val">{v ?? '—'}</span>
+              </div>
+            ))
+          }
+          <button className="btn btn-outline btn-sm w-full" style={{ marginTop: 10 }}>✏️ Editar elemento</button>
+        </div>
+      )}
+
+      {/* Leyenda */}
+      <div style={{
+        position: 'absolute', bottom: 24, right: 12, zIndex: 10,
+        background: 'var(--bg-card)', border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-md)', padding: '10px 14px',
+        boxShadow: 'var(--shadow-lg)',
+      }}>
+        <div className="text-xs text-muted" style={{ marginBottom: 8, fontWeight: 600 }}>Estado tuberías</div>
+        {[['Bueno','#22c55e'],['Regular','#f59e0b'],['Malo','#ef4444'],['Crítico','#dc2626']].map(([label, color]) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+            <div style={{ width: 24, height: 4, background: color, borderRadius: 2 }} />
+            {label}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
