@@ -91,10 +91,11 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
 # ── Routers ─────────────────────────────────────
-# Se irán registrando a medida que se implementen las fases
-# from app.routers import auth, tuberias, nodos, valvulas, tanques, fuentes, simulacion, reportes
-# app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
-# app.include_router(tuberias.router, prefix=settings.API_V1_PREFIX)
+from app.auth.router import router as auth_router
+from app.routers.usuarios import router as usuarios_router
+
+app.include_router(auth_router,     prefix=settings.API_V1_PREFIX)
+app.include_router(usuarios_router, prefix=settings.API_V1_PREFIX)
 
 
 # ── Health check ────────────────────────────────

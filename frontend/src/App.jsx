@@ -6,10 +6,18 @@ import MapPage from './pages/MapPage'
 import CatastroPage from './pages/CatastroPage'
 import GuiaShapefilePage from './pages/GuiaShapefilePage'
 import DashboardPage from './pages/DashboardPage'
+import AdminPage from './pages/AdminPage'
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   return isAuthenticated ? children : <Navigate to="/login" replace />
+}
+
+function AdminRoute({ children }) {
+  const user = useAuthStore((s) => s.user)
+  if (!user) return <Navigate to="/login" replace />
+  if (user.rol !== 'admin') return <Navigate to="/mapa" replace />
+  return children
 }
 
 export default function App() {
@@ -29,6 +37,7 @@ export default function App() {
         <Route path="catastro"  element={<CatastroPage />} />
         <Route path="guia-shapefile" element={<GuiaShapefilePage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
       </Route>
     </Routes>
   )

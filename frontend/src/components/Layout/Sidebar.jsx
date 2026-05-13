@@ -1,22 +1,26 @@
 import { NavLink } from 'react-router-dom'
 import { useMapStore, LAYERS } from '../../store/mapStore'
+import { useAuthStore } from '../../store/authStore'
 
 const NAV_ITEMS = [
-  { to: '/mapa',           icon: '🗺️',  label: 'Visor GIS' },
-  { to: '/catastro',       icon: '📋',  label: 'Catastro de Red' },
-  { to: '/dashboard',      icon: '📊',  label: 'Dashboard' },
-  { to: '/guia-shapefile', icon: '📐',  label: 'Guía Shapefile' },
+  { to: '/mapa',           icon: '🗺️',  label: 'Visor GIS',       roles: null },
+  { to: '/catastro',       icon: '📋',  label: 'Catastro de Red', roles: null },
+  { to: '/dashboard',      icon: '📊',  label: 'Dashboard',       roles: null },
+  { to: '/guia-shapefile', icon: '📐',  label: 'Guía Shapefile',  roles: null },
+  { to: '/admin',          icon: '👥',  label: 'Usuarios',        roles: ['admin'] },
 ]
 
 export default function Sidebar() {
   const { visibleLayers, toggleLayer } = useMapStore()
+  const user = useAuthStore(s => s.user)
+  const navItems = NAV_ITEMS.filter(item => !item.roles || item.roles.includes(user?.rol))
 
   return (
     <aside className="sidebar">
       {/* Navegación */}
       <div className="nav-section">
         <div className="nav-section-label">Módulos</div>
-        {NAV_ITEMS.map(({ to, icon, label }) => (
+        {navItems.map(({ to, icon, label }) => (
           <NavLink
             key={to} to={to}
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
