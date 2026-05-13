@@ -1,0 +1,77 @@
+# ========================
+# Variables de entorno (NUNCA subir al repo)
+# ========================
+.env
+.env.local
+.env.*.local
+
+# ========================
+# Frontend - Node / React
+# ========================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.eslintcache
+
+# ========================
+# Backend - Python
+# ========================
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.pyc
+backend/.venv/
+backend/venv/
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+backend/alembic/versions/*.pyc
+
+# ========================
+# Datos espaciales temporales / uploads
+# ========================
+backend/uploads/
+backend/temp/
+data/raw/
+data/temp/
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.qpj
+# Excepción: shapefiles de ejemplo en /examples sí se suben
+!examples/**/*.shp
+!examples/**/*.dbf
+!examples/**/*.shx
+!examples/**/*.prj
+
+# ========================
+# Archivos EPANET / WNTR
+# ========================
+*.inp
+*.rpt
+*.out
+backend/simulations/
+
+# ========================
+# IDEs y SO
+# ========================
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ========================
+# Docker
+# ========================
+*.log
+docker-compose.override.yml
+
+# ========================
+# Reportes generados
+# ========================
+backend/reports/output/
+frontend/public/reports/
