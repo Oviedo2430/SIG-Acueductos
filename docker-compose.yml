@@ -1,0 +1,105 @@
+# ============================================================
+# SIG-Acueducto Labateca — Docker Compose (Desarrollo Local)
+# Uso: docker-compose up -d
+# ============================================================
+
+version: '3.9'
+
+services:
+
+  # ──────────────────────────────────────────────
+  # Base de datos: PostgreSQL 15 + PostGIS 3.4
+  # ──────────────────────────────────────────────
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: sig_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-siguser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sigpassword}
+      POSTGRES_DB: ${DB_NAME:-sig_acueducto}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-siguser} -d ${DB_NAME:-sig_acueducto}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ──────────────────────────────────────────────
+  # Tile Server: Martin (teselas vectoriales MVT)
+  # Endpoint: http://localhost:3000/{source}/{z}/{x}/{y}
+  # Catálogo: http://localhost:3000/catalog
+  # ──────────────────────────────────────────────
+  tiles:
+    image: ghcr.io/maplibre/martin:latest
+    container_name: sig_tiles
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-siguser}:${DB_PASSWORD:-sigpassword}@db:5432/${DB_NAME:-sig_acueducto}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./database/martin.yaml:/config.yaml:ro
+    command: --config /config.yaml
+
+  # ──────────────────────────────────────────────
+  # Backend: FastAPI + WNTR
+  # API Docs: http://localhost:8000/docs
+  # ──────────────────────────────────────────────
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: sig_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${DB_USER:-siguser}:${DB_PASSWORD:-sigpassword}@db:5432/${DB_NAME:-sig_acueducto}
+      SYNC_DATABASE_URL: postgresql://${DB_USER:-siguser}:${DB_PASSWORD:-sigpassword}@db:5432/${DB_NAME:-sig_acueducto}
+      SECRET_KEY: ${SECRET_KEY:-dev_secret_key_cambiar_en_produccion}
+      ALGORITHM: ${ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5173}
+      INITIAL_ADMIN_EMAIL: ${INITIAL_ADMIN_EMAIL:-admin@acueducto-labateca.gov.co}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD:-Admin123!}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # ──────────────────────────────────────────────
+  # Frontend: React + Vite (dev server)
+  # App: http://localhost:5173
+  # ──────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: sig_frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:8000
+      VITE_TILES_URL: http://localhost:3000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  postgres_data:
+    name: sig_acueducto_pgdata

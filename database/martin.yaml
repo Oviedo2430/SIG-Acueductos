@@ -1,0 +1,115 @@
+# ============================================================
+# Martin Tile Server — Configuración
+# Sirve teselas vectoriales (MVT) directamente desde PostGIS
+# Documentación: https://martin.maplibre.org/
+# ============================================================
+
+# Conexión a la base de datos (se puede sobreescribir con DATABASE_URL env var)
+# La variable de entorno DATABASE_URL tiene prioridad sobre este valor
+postgres:
+  connection_string: "${DATABASE_URL}"
+  pool_size: 10
+  default_srid: 4326
+  auto_publish:
+    tables:
+      schemas:
+        - gis
+        - hidraulica
+
+# Configuración HTTP
+listen_addresses: "0.0.0.0:3000"
+
+# CORS
+allow_origin: "*"
+
+# Tablas publicadas como fuentes de teselas
+# Martin las descubre automáticamente de los esquemas definidos en auto_publish
+# pero podemos definir fuentes adicionales con configuraciones específicas:
+
+sources:
+  # Tuberías con propiedades completas para el mapa
+  tuberias_mvt:
+    type: table
+    schema: gis
+    table: tuberias
+    geometry_column: geom
+    geometry_type: LineString
+    srid: 4326
+    properties:
+      - id
+      - codigo
+      - diametro_mm
+      - material
+      - longitud_m
+      - rugosidad_hw
+      - year_instalacion
+      - estado
+      - presion_max_mca
+      - zona_presion
+      - sector
+
+  # Nodos
+  nodos_mvt:
+    type: table
+    schema: gis
+    table: nodos
+    geometry_column: geom
+    geometry_type: Point
+    srid: 4326
+    properties:
+      - id
+      - codigo
+      - tipo
+      - cota_msnm
+      - demanda_base_lps
+      - tipo_usuario
+      - presion_min_req_mca
+      - num_usuarios
+      - estado
+
+  # Válvulas
+  valvulas_mvt:
+    type: table
+    schema: gis
+    table: valvulas
+    geometry_column: geom
+    geometry_type: Point
+    srid: 4326
+    properties:
+      - id
+      - codigo
+      - tipo
+      - estado
+      - diametro_mm
+      - cota_msnm
+
+  # Tanques
+  tanques_mvt:
+    type: table
+    schema: gis
+    table: tanques
+    geometry_column: geom
+    geometry_type: Point
+    srid: 4326
+    properties:
+      - id
+      - codigo
+      - nombre
+      - capacidad_m3
+      - estado
+
+  # Fuentes
+  fuentes_mvt:
+    type: table
+    schema: gis
+    table: fuentes
+    geometry_column: geom
+    geometry_type: Point
+    srid: 4326
+    properties:
+      - id
+      - codigo
+      - nombre
+      - tipo
+      - caudal_disponible_lps
+      - estado
