@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore'
 const NAV_ITEMS = [
   { to: '/mapa',           icon: '🗺️',  label: 'Visor GIS',       roles: null },
   { to: '/catastro',       icon: '📋',  label: 'Catastro de Red', roles: null },
+  { to: '/simulacion',     icon: '💧',  label: 'Simulación WNTR', roles: null },
   { to: '/dashboard',      icon: '📊',  label: 'Dashboard',       roles: null },
   { to: '/guia-shapefile', icon: '📐',  label: 'Guía Shapefile',  roles: null },
   { to: '/admin',          icon: '👥',  label: 'Usuarios',        roles: ['admin'] },

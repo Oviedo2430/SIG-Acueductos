@@ -7,6 +7,7 @@ import CatastroPage from './pages/CatastroPage'
 import GuiaShapefilePage from './pages/GuiaShapefilePage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
+import SimulacionPage from './pages/SimulacionPage'
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="catastro"  element={<CatastroPage />} />
         <Route path="guia-shapefile" element={<GuiaShapefilePage />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="simulacion" element={<SimulacionPage />} />
         <Route path="admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
       </Route>
     </Routes>
