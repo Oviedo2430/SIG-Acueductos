@@ -4,7 +4,7 @@ import { useMapStore, LAYERS } from '../store/mapStore'
 
 export default function MapPage() {
   const [selectedFeature, setSelectedFeature] = useState(null)
-  const { colorBy, setColorBy } = useMapStore()
+  const { colorBy, setColorBy, drawnFeature } = useMapStore()
 
   return (
     <div style={{ position: 'relative', height: 'calc(100vh - var(--topbar-h))', width: '100%' }}>
@@ -58,6 +58,45 @@ export default function MapPage() {
             ))
           }
           <button className="btn btn-outline btn-sm w-full" style={{ marginTop: 10 }}>✏️ Editar elemento</button>
+        </div>
+      )}
+
+      {/* Panel de edición de nueva geometría (Draw) */}
+      {drawnFeature && !selectedFeature && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
+          background: 'var(--bg-card)', border: '1px solid var(--primary)',
+          borderRadius: 'var(--radius-md)', padding: '14px',
+          boxShadow: 'var(--shadow-lg)', minWidth: 260, maxWidth: 320,
+          animation: 'fadeIn .2s ease',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+              ✨ Nueva Geometría Dibujada
+            </span>
+          </div>
+          <div className="text-xs text-muted mb-3">
+            Tipo: <strong style={{color: 'var(--fg)'}}>{drawnFeature.geometry.type}</strong>
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            ¿Qué deseas hacer con este elemento?
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {drawnFeature.geometry.type === 'LineString' && (
+              <button className="btn btn-primary btn-sm w-full">Crear Tubería</button>
+            )}
+            {drawnFeature.geometry.type === 'Point' && (
+              <>
+                <button className="btn btn-primary btn-sm w-full">Crear Nodo</button>
+                <button className="btn btn-outline btn-sm w-full">Crear Válvula</button>
+                <button className="btn btn-outline btn-sm w-full">Crear Tanque</button>
+              </>
+            )}
+            {drawnFeature.geometry.type === 'Polygon' && (
+              <button className="btn btn-primary btn-sm w-full">Seleccionar Área (Simulación)</button>
+            )}
+            <button className="btn btn-ghost btn-sm w-full" style={{marginTop: 4, color: 'var(--danger)'}}>Cancelar</button>
+          </div>
         </div>
       )}
 

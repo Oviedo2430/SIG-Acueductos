@@ -25,4 +25,8 @@ export const useMapStore = create((set) => ({
   // Estilo de coloración activo
   colorBy: 'none', // 'none' | 'presion' | 'velocidad' | 'estado' | 'material'
   setColorBy: (v) => set({ colorBy: v }),
+
+  // Geometría dibujada recientemente (para modo edición/creación)
+  drawnFeature: null,
+  setDrawnFeature: (f) => set({ drawnFeature: f }),
 }))
