@@ -102,6 +102,7 @@ export default function MapPage() {
                     <button className="btn btn-primary btn-sm w-full" onClick={() => setCreationType('nodos')}>Crear Nodo</button>
                     <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('valvulas')}>Crear Válvula</button>
                     <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('tanques')}>Crear Tanque</button>
+                    <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('danos')} style={{ color: '#dc2626', borderColor: '#dc2626' }}>Crear Daño (Mantenimiento)</button>
                   </>
                 )}
                 {drawnFeature.geometry.type === 'Polygon' && (

@@ -242,8 +242,8 @@ function DashboardContent({ stats, healthScore }) {
         {[
           { label: 'Tuberías', value: red.total_tuberias ?? '—', sub: red.km_red ? `${red.km_red} km de red` : 'en catastro', color: 'var(--layer-tuberias)' },
           { label: 'Nodos',    value: red.total_nodos ?? '—',    sub: `${red.total_valvulas ?? 0} válvulas`, color: 'var(--layer-nodos)' },
-          { label: 'Presión media', value: sim ? `${sim.presion_media} m` : '—', sub: sim ? `Última simulación: ${sim.nombre}` : 'Sin simulación', color: 'var(--primary)' },
-          { label: 'Nodos críticos', value: sim ? `${sim.nodos_criticos}/${sim.nodos_total}` : '—', sub: 'Presión < 10 m.c.a', color: (sim?.nodos_criticos > 0) ? 'var(--danger)' : 'var(--success)' },
+          { label: 'Daños / Fugas', value: red.total_danos ?? 0, sub: 'Reportes de mantenimiento', color: 'var(--danger)' },
+          { label: 'Presión media', value: sim ? `${sim.presion_media} m` : '—', sub: sim ? `Última sim: ${sim.nombre}` : 'Sin simulación', color: 'var(--primary)' },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
@@ -318,9 +318,11 @@ function DashboardContent({ stats, healthScore }) {
             { label: '🗂 Tuberías CSV',  url: '/reportes/exportar/tuberias?formato=csv',  file: 'tuberias.csv' },
             { label: '🗂 Nodos CSV',     url: '/reportes/exportar/nodos?formato=csv',     file: 'nodos.csv' },
             { label: '🗂 Válvulas CSV',  url: '/reportes/exportar/valvulas?formato=csv',  file: 'valvulas.csv' },
+            { label: '🗂 Daños CSV',     url: '/reportes/exportar/danos?formato=csv',     file: 'danos.csv' },
             { label: '📊 Tuberías Excel',url: '/reportes/exportar/tuberias?formato=excel',file: 'tuberias.xlsx' },
             { label: '📊 Nodos Excel',   url: '/reportes/exportar/nodos?formato=excel',   file: 'nodos.xlsx' },
             { label: '📊 Tanques Excel', url: '/reportes/exportar/tanques?formato=excel', file: 'tanques.xlsx' },
+            { label: '📊 Daños Excel',   url: '/reportes/exportar/danos?formato=excel',   file: 'danos.xlsx' },
           ].map(({ label, url, file }) => (
             <ExportButton key={file} label={label} url={url} filename={file} />
           ))}

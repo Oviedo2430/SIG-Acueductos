@@ -49,6 +49,14 @@ const COLUMNS_MAP = {
     { accessorKey: 'caudal_disponible_lps',   header: 'Caudal (L/s)',   size: 110 },
     { accessorKey: 'estado',                  header: 'Estado',         size: 90, cell: EstadoCell },
   ],
+  danos: [
+    { accessorKey: 'codigo',                 header: 'Código',         size: 90 },
+    { accessorKey: 'tipo_dano',              header: 'Tipo de daño',   size: 130 },
+    { accessorKey: 'severidad',              header: 'Severidad',      size: 90 },
+    { accessorKey: 'estado_reparacion',      header: 'Reparación',     size: 100, cell: EstadoCell },
+    { accessorKey: 'costo_reparacion',       header: 'Costo ($)',      size: 90 },
+    { accessorKey: 'volumen_perdido_est_m3', header: 'Vol. perdido',   size: 100 },
+  ],
 }
 
 const ESTADO_COLORS = {
@@ -56,6 +64,7 @@ const ESTADO_COLORS = {
   Critico: '#dc2626', Activo: 'var(--success)', Inactivo: 'var(--text-muted)',
   Abierta: 'var(--success)', Cerrada: 'var(--danger)', Operativo: 'var(--success)',
   Activa: 'var(--success)',
+  Pendiente: 'var(--danger)', 'En progreso': 'var(--warning)', Reparado: 'var(--success)'
 }
 
 function EstadoCell({ getValue }) {
@@ -64,7 +73,7 @@ function EstadoCell({ getValue }) {
   return <span style={{ color, fontWeight: 600 }}>● {v || '—'}</span>
 }
 
-const LAYER_ORDER = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes']
+const LAYER_ORDER = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes', 'danos']
 
 export default function CatastroPage() {
   const qc = useQueryClient()

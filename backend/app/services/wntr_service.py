@@ -13,7 +13,7 @@ from geoalchemy2.shape import to_shape
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.models.red import Tuberia, Nodo, Valvula, Tanque, Fuente
+from app.models.red import Tuberia, Nodo, Valvula, Tanque, Fuente, Dano
 
 # ── Red de demostración (cuando la BD está vacía) ────────────────────────────
 DEMO_NETWORK = {
@@ -73,7 +73,7 @@ def _build_demo_model(config: dict) -> wntr.network.WaterNetworkModel:
 
 
 def _build_db_model(
-    tuberias, nodos, tanques, fuentes, config: dict
+    tuberias, nodos, tanques, fuentes, danos, config: dict
 ) -> wntr.network.WaterNetworkModel:
     """Construye la red a partir de datos reales de PostGIS."""
     wn = wntr.network.WaterNetworkModel()
@@ -138,6 +138,22 @@ def _build_db_model(
         except Exception:
             continue
 
+    # Agregar daños no reparados como "Emisores" (fugas) a los nodos más cercanos
+    for d in danos:
+        if d.estado_reparacion == 'Reparado' or not d.geom:
+            continue
+        try:
+            pt = to_shape(d.geom)
+            nearest = _nearest_node(pt, node_geoms, tol=0.01) # Tolerancia mayor para asignar fuga a la red
+            if nearest:
+                node = wn.get_node(nearest)
+                # Estimación simple del coeficiente de emisor basado en el volumen o severidad
+                coeff = 0.5 if d.severidad == 'Alta' else 0.2 if d.severidad == 'Media' else 0.05
+                # En WNTR (EPANET), el caudal de fuga es q = coeff * p^0.5
+                node.emitter_coefficient = coeff
+        except Exception:
+            continue
+
     return wn
 
 
@@ -198,7 +214,7 @@ def _extract_results(wn, results) -> dict:
 
 
 def _run_sync(
-    tuberias, nodos, tanques, fuentes, config: dict
+    tuberias, nodos, tanques, fuentes, danos, config: dict
 ) -> dict:
     """Función síncrona que construye y ejecuta la simulación WNTR."""
     # Usar red real si hay datos; si no, usar demo
@@ -207,7 +223,7 @@ def _run_sync(
     if use_demo:
         wn = _build_demo_model(config)
     else:
-        wn = _build_db_model(tuberias, nodos, tanques, fuentes, config)
+        wn = _build_db_model(tuberias, nodos, tanques, fuentes, danos, config)
 
     factor = config.get("factor_demanda", 1.0)
     if factor != 1.0:
@@ -227,9 +243,10 @@ async def ejecutar_simulacion(db: AsyncSession, config: dict) -> dict:
     nodos    = (await db.execute(select(Nodo))).scalars().all()
     tanques  = (await db.execute(select(Tanque))).scalars().all()
     fuentes  = (await db.execute(select(Fuente))).scalars().all()
+    danos    = (await db.execute(select(Dano))).scalars().all()
 
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
-        None, _run_sync, tuberias, nodos, tanques, fuentes, config
+        None, _run_sync, tuberias, nodos, tanques, fuentes, danos, config
     )
     return result

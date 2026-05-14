@@ -20,7 +20,7 @@ from openpyxl.utils import get_column_letter
 
 from app.database import get_db
 from app.auth.dependencies import get_current_user
-from app.models.red import Tuberia, Nodo, Valvula, Tanque, Fuente
+from app.models.red import Tuberia, Nodo, Valvula, Tanque, Fuente, Dano
 from app.models.simulacion import Simulacion
 
 router = APIRouter(prefix="/reportes", tags=["Reportes y exportación"])
@@ -76,6 +76,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
     total_val = await count(Valvula)
     total_tan = await count(Tanque)
     total_fue = await count(Fuente)
+    total_danos = await count(Dano)
 
     # ── Distribución por estado ──────────────────────────────
     estado_res = await db.execute(
@@ -144,7 +145,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
         "red": {
             "total_tuberias": total_tub, "total_nodos": total_nod,
             "total_valvulas": total_val, "total_tanques": total_tan,
-            "total_fuentes": total_fue, "km_red": None,
+            "total_fuentes": total_fue, "total_danos": total_danos, "km_red": None,
         },
         "estados_tuberias": estados,
         "materiales_tuberias": materiales,
@@ -164,12 +165,13 @@ EXPORTABLE = {
     "valvulas": (Valvula, ["codigo","tipo","estado","diametro_mm","cota_msnm","presion_setting","observaciones"]),
     "tanques":  (Tanque,  ["codigo","nombre","cota_fondo_msnm","cota_techo_msnm","capacidad_m3","nivel_max_m","material","estado"]),
     "fuentes":  (Fuente,  ["codigo","nombre","tipo","cota_piezometrica_msnm","caudal_disponible_lps","estado"]),
+    "danos":    (Dano,    ["codigo","tipo_dano","severidad","estado_reparacion","costo_reparacion","volumen_perdido_est_m3","fecha_reporte","observaciones"]),
 }
 
 
 @router.get("/exportar/{tipo}")
 async def exportar_catastro(
-    tipo: Literal["tuberias","nodos","valvulas","tanques","fuentes"],
+    tipo: Literal["tuberias","nodos","valvulas","tanques","fuentes","danos"],
     formato: Literal["csv","excel"] = Query("csv"),
     db: AsyncSession = Depends(get_db),
     _=CanView,
