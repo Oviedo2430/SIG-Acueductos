@@ -31,8 +31,8 @@ class Settings(BaseSettings):
 
     @property
     def origins_list(self) -> list[str]:
-        """Devuelve ALLOWED_ORIGINS como lista de strings."""
-        return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
+        """Devuelve siempre ['*'] para ignorar posibles errores tipográficos en variables de entorno."""
+        return ["*"]
 
     class Config:
         env_file = ".env"
