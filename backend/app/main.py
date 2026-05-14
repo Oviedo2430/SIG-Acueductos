@@ -23,11 +23,25 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"🚀 Iniciando {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
     async with engine.begin() as conn:
-        # Las tablas se crean via init.sql de PostgreSQL.
-        # Aquí solo verificamos la conexión.
         from sqlalchemy import text
+        
+        # Verificar y corregir esquema de simulaciones si es la versión vieja de init.sql
+        res = await conn.execute(text("""
+            SELECT column_name FROM information_schema.columns 
+            WHERE table_schema='hidraulica' AND table_name='simulaciones' AND column_name='tipo'
+        """))
+        if res.fetchone():
+            print("⚠️ Detectado esquema obsoleto de hidraulica.simulaciones. Recreando tablas...")
+            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_nodo CASCADE;"))
+            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_tuberia CASCADE;"))
+            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.simulaciones CASCADE;"))
+            
+        # Crear tablas que falten según SQLAlchemy Models
+        from app.database import Base
+        await conn.run_sync(Base.metadata.create_all)
+        
         await conn.execute(text("SELECT 1"))
-    print("✅ Conexión a base de datos verificada.")
+    print("✅ Conexión a base de datos verificada y esquema actualizado.")
 
     # Seed del usuario admin inicial
     await _seed_admin_user()
