@@ -159,6 +159,29 @@ CREATE TABLE IF NOT EXISTS gis.fuentes (
 CREATE INDEX IF NOT EXISTS idx_fuentes_geom ON gis.fuentes USING GIST(geom);
 COMMENT ON TABLE gis.fuentes IS 'Fuentes hídricas y reservorios del sistema';
 
+-- Daños y Mantenimiento Operativo (geometría puntual)
+CREATE TABLE IF NOT EXISTS gis.danos (
+    id                          SERIAL PRIMARY KEY,
+    codigo                      VARCHAR(20) UNIQUE NOT NULL,
+    geom                        GEOMETRY(Point, 4326) NOT NULL,
+    tipo_dano                   VARCHAR(50) NOT NULL
+                                CHECK (tipo_dano IN ('Rotura tubo', 'Fuga en unión', 'Válvula averiada', 'Rebose tanque', 'Fraude/Conexión ilegal', 'Otro')),
+    severidad                   VARCHAR(20) DEFAULT 'Media'
+                                CHECK (severidad IN ('Alta', 'Media', 'Baja')),
+    estado_reparacion           VARCHAR(30) DEFAULT 'Pendiente'
+                                CHECK (estado_reparacion IN ('Pendiente', 'En progreso', 'Reparado')),
+    costo_reparacion            FLOAT DEFAULT 0,
+    volumen_perdido_est_m3      FLOAT DEFAULT 0,
+    observaciones               TEXT,
+    fecha_reporte               TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    fecha_reparacion            TIMESTAMP WITH TIME ZONE,
+    fecha_actualizacion         TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    usuario_id                  INTEGER REFERENCES auth.usuarios(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_danos_geom ON gis.danos USING GIST(geom);
+COMMENT ON TABLE gis.danos IS 'Registro operativo de daños, fugas y reparaciones (Mantenimiento)';
+
 -- ============================================================
 -- ESQUEMA: hidraulica — Simulaciones y resultados
 -- ============================================================

@@ -23,6 +23,14 @@ const FORMS = {
     { name: 'nombre', label: 'Nombre', type: 'text' },
     { name: 'capacidad_m3', label: 'Capacidad (m³)', type: 'number' },
   ],
+  danos: [
+    { name: 'codigo', label: 'Código de reporte', type: 'text', required: true },
+    { name: 'tipo_dano', label: 'Tipo de daño', type: 'select', options: ['Rotura tubo', 'Fuga en unión', 'Válvula averiada', 'Rebose tanque', 'Fraude/Conexión ilegal', 'Otro'] },
+    { name: 'severidad', label: 'Severidad', type: 'select', options: ['Alta', 'Media', 'Baja'] },
+    { name: 'estado_reparacion', label: 'Estado', type: 'select', options: ['Pendiente', 'En progreso', 'Reparado'] },
+    { name: 'costo_reparacion', label: 'Costo ($)', type: 'number' },
+    { name: 'volumen_perdido_est_m3', label: 'Volumen perdido est. (m³)', type: 'number' },
+  ],
 }
 
 export default function ElementForm({ layerType, onSubmit, onCancel, isSaving }) {

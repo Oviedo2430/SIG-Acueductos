@@ -182,6 +182,37 @@ class FuenteResponse(FuenteBase):
     model_config = {"from_attributes": True}
 
 
+# ── Daños / Mantenimiento ──────────────────────────────────────
+class DanoBase(BaseModel):
+    codigo: str = Field(..., max_length=20)
+    tipo_dano: str = Field(..., max_length=50)
+    severidad: Optional[str] = "Media"
+    estado_reparacion: Optional[str] = "Pendiente"
+    costo_reparacion: Optional[float] = 0.0
+    volumen_perdido_est_m3: Optional[float] = 0.0
+    observaciones: Optional[str] = None
+    fecha_reparacion: Optional[datetime] = None
+
+class DanoCreate(DanoBase):
+    geom: GeomInput
+
+class DanoUpdate(BaseModel):
+    tipo_dano: Optional[str] = None
+    severidad: Optional[str] = None
+    estado_reparacion: Optional[str] = None
+    costo_reparacion: Optional[float] = None
+    volumen_perdido_est_m3: Optional[float] = None
+    observaciones: Optional[str] = None
+    fecha_reparacion: Optional[datetime] = None
+    geom: Optional[GeomInput] = None
+
+class DanoResponse(DanoBase):
+    id: int
+    geom: Optional[dict] = None
+    fecha_reporte: Optional[datetime] = None
+    model_config = {"from_attributes": True}
+
+
 # ── Paginación ────────────────────────────────────────────────
 class PaginatedResponse(BaseModel):
     total: int

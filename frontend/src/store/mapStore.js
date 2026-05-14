@@ -6,11 +6,12 @@ export const LAYERS = {
   valvulas: { id: 'valvulas', label: 'Válvulas',   color: '#fb923c', icon: '◆'  },
   tanques:  { id: 'tanques',  label: 'Tanques',    color: '#a78bfa', icon: '▣'  },
   fuentes:  { id: 'fuentes',  label: 'Fuentes',    color: '#f472b6', icon: '★'  },
+  danos:    { id: 'danos',    label: 'Daños',      color: '#dc2626', icon: '⚠️'  },
 }
 
 export const useMapStore = create((set) => ({
   // Capas visibles
-  visibleLayers: { tuberias: true, nodos: true, valvulas: true, tanques: true, fuentes: true },
+  visibleLayers: { tuberias: true, nodos: true, valvulas: true, tanques: true, fuentes: true, danos: true },
   toggleLayer: (id) =>
     set((s) => ({ visibleLayers: { ...s.visibleLayers, [id]: !s.visibleLayers[id] } })),
 

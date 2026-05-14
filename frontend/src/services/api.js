@@ -41,6 +41,7 @@ export const redApi = {
   valvulas: crud('/valvulas'),
   tanques:  crud('/tanques'),
   fuentes:  crud('/fuentes'),
+  danos:    crud('/danos'),
 }
 
 // ── Importación de shapefiles ─────────────────────────────

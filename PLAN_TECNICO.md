@@ -429,20 +429,25 @@ git push → GitHub (rama main)
 
 ---
 
-## 11. ROADMAP DE FASES
+## 11. ROADMAP DE FASES (VERSIÓN 1.0 y 2.0)
 
+### VERSIÓN 1.0 (Completada)
 | Fase | Descripción | Estado |
 |---|---|---|
 | **1** | Infraestructura base (Docker, BD PostGIS, FastAPI, Martin) | ✅ Completada |
 | **2** | Visor GIS MapLibre + sistema de diseño + guía de shapefile | ✅ Completada |
 | **3** | Autenticación JWT + gestión de usuarios + roles | ✅ Completada |
-| **4** | CRUD catastro + importación shapefiles EPSG:9377 | ✅ Completada |
+| **4** | CRUD catastro + dibujo en mapa + importación shapefiles | ✅ Completada |
 | **5** | Modelado hidráulico WNTR (simulación, presiones, velocidades) | ✅ Completada |
 | **6** | Dashboard ECharts + KPIs + exportación CSV/Excel | ✅ Completada |
-| **7** | Despliegue en EasyPanel (Docker prod, nginx, CI/CD) | 🔄 Pendiente |
-| **8** | Edición de geometrías en el mapa (MapLibre Draw) | 🔄 Pendiente |
-| **9** | Exportación EPANET .INP + análisis avanzados WNTR | 🔄 Pendiente |
-| **10** | Reportes PDF automáticos + notificaciones | 🔄 Pendiente |
+
+### VERSIÓN 2.0 (Estrategia de Pérdidas y Mantenimiento)
+| Fase | Descripción | Estado |
+|---|---|---|
+| **7** | **Módulo Operativo (Catastro de Daños)**: Nueva capa en mapa para registrar reparaciones, fugas, costos y volúmenes perdidos. | 🔄 En desarrollo |
+| **8** | **Estrategia Comercial (Demanda Teórica)**: Cálculo automático de demanda en nodos basado en tipo y cantidad de usuarios, sin necesidad de micromedición. | 🔄 Pendiente |
+| **9** | **Control de Pérdidas (Caudal Mínimo Nocturno)**: Ingreso de lecturas de macromedidor a las 3:00 a.m. para cálculo de ANC y Fugas Físicas. | 🔄 Pendiente |
+| **10** | **Simulación con Fugas (WNTR)**: Distribución automática de fugas calculadas como "Emisores" en la simulación hidráulica para reflejar caídas de presión reales. | 🔄 Pendiente |
 
 ---
 

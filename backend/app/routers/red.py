@@ -300,6 +300,53 @@ async def eliminar_fuente(item_id: int, db: AsyncSession = Depends(get_db), _=De
 
 
 # ═══════════════════════════════════════════════════════════════
+# DAÑOS Y MANTENIMIENTO
+# ═══════════════════════════════════════════════════════════════
+from app.models.red import Dano
+from app.schemas.red import DanoCreate, DanoUpdate, DanoResponse
+
+@router.get("/danos/geojson")
+async def danos_geojson(db: AsyncSession = Depends(get_db), _=CanView):
+    result = await db.execute(select(Dano)); return _as_feature_collection(result.scalars().all())
+
+@router.get("/danos")
+async def listar_danos(page: int = Query(1, ge=1), limit: int = Query(50, ge=1, le=500), db: AsyncSession = Depends(get_db), _=CanView):
+    q = select(Dano)
+    total_r = await db.execute(select(func.count()).select_from(q.subquery()))
+    result = await db.execute(q.offset((page - 1) * limit).limit(limit))
+    return {"total": total_r.scalar(), "page": page, "limit": limit, "data": [_serialize(r, Dano) for r in result.scalars().all()]}
+
+@router.get("/danos/{item_id}")
+async def obtener_dano(item_id: int, db: AsyncSession = Depends(get_db), _=CanView):
+    r = await db.execute(select(Dano).where(Dano.id == item_id))
+    obj = r.scalar_one_or_none()
+    if not obj: raise HTTPException(404, "Daño no encontrado"); return _serialize(obj, Dano)
+
+@router.post("/danos", status_code=201)
+async def crear_dano(data: DanoCreate, db: AsyncSession = Depends(get_db), current_user=CanEdit):
+    obj = Dano(**data.model_dump(exclude={"geom"}), geom=geojson_to_geom(data.geom.model_dump()))
+    obj.usuario_id = current_user.id
+    db.add(obj); await db.commit(); await db.refresh(obj); return _serialize(obj, Dano)
+
+@router.put("/danos/{item_id}")
+async def actualizar_dano(item_id: int, data: DanoUpdate, db: AsyncSession = Depends(get_db), _=CanEdit):
+    r = await db.execute(select(Dano).where(Dano.id == item_id))
+    obj = r.scalar_one_or_none()
+    if not obj: raise HTTPException(404, "Daño no encontrado")
+    ud = data.model_dump(exclude_none=True)
+    if "geom" in ud: obj.geom = geojson_to_geom(ud.pop("geom"))
+    for k, v in ud.items(): setattr(obj, k, v)
+    await db.commit(); await db.refresh(obj); return _serialize(obj, Dano)
+
+@router.delete("/danos/{item_id}", status_code=204)
+async def eliminar_dano(item_id: int, db: AsyncSession = Depends(get_db), _=Depends(require_role("admin"))):
+    r = await db.execute(select(Dano).where(Dano.id == item_id))
+    obj = r.scalar_one_or_none()
+    if not obj: raise HTTPException(404)
+    await db.delete(obj); await db.commit()
+
+
+# ═══════════════════════════════════════════════════════════════
 # ESTADÍSTICAS GENERALES DE LA RED
 # ═══════════════════════════════════════════════════════════════
 @router.get("/red/stats")

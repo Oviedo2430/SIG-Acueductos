@@ -207,7 +207,7 @@ export default function MapViewer({ onFeatureClick }) {
   const addSources = () => {
     const m = map.current
     const backendUrl = api.defaults.baseURL
-    const layers = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes']
+    const layers = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes', 'danos']
     
     layers.forEach((key) => {
       if (!m.getSource(key)) {
@@ -296,6 +296,19 @@ export default function MapViewer({ onFeatureClick }) {
         'circle-stroke-width': 2.5,
       },
     })
+
+    // Daños (Mantenimiento)
+    m.addLayer({
+      id: 'danos-layer',
+      type: 'circle',
+      source: 'danos',
+      paint: {
+        'circle-radius': ['interpolate', ['linear'], ['zoom'], 12, 6, 16, 12],
+        'circle-color': LAYERS.danos.color,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 2,
+      },
+    })
   }
 
   const buildPopupHTML = (layerKey, props) => {
@@ -314,6 +327,7 @@ export default function MapViewer({ onFeatureClick }) {
       ['valvulas-layer', 'valvulas'],
       ['tanques-layer', 'tanques'],
       ['fuentes-layer', 'fuentes'],
+      ['danos-layer', 'danos'],
     ]
 
     clickableLayers.forEach(([layerId, sourceKey]) => {
@@ -337,6 +351,7 @@ export default function MapViewer({ onFeatureClick }) {
     const layerMap = {
       tuberias: 'tuberias-layer', nodos: 'nodos-layer',
       valvulas: 'valvulas-layer', tanques: 'tanques-layer', fuentes: 'fuentes-layer',
+      danos: 'danos-layer'
     }
     Object.entries(visibleLayers).forEach(([key, visible]) => {
       const lid = layerMap[key]

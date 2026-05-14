@@ -105,3 +105,24 @@ class Fuente(_AuditMixin, Base):
     calidad_agua            = Column(String(50))
     estado                  = Column(String(20), default="Activa")
     observaciones           = Column(String(500))
+
+
+class Dano(Base):
+    """Registro operativo de daños y reparaciones (geometría puntual)."""
+    __tablename__ = "danos"
+    __table_args__ = {"schema": "gis"}
+
+    id                      = Column(Integer, primary_key=True, index=True)
+    codigo                  = Column(String(20), unique=True, nullable=False, index=True)
+    geom                    = Column(Geometry("POINT", srid=4326), nullable=False)
+    tipo_dano               = Column(String(50), nullable=False)
+    severidad               = Column(String(20), default="Media")
+    estado_reparacion       = Column(String(30), default="Pendiente")
+    costo_reparacion        = Column(Float, default=0.0)
+    volumen_perdido_est_m3  = Column(Float, default=0.0)
+    observaciones           = Column(String(500))
+    
+    fecha_reporte           = Column(DateTime(timezone=True), server_default=func.now())
+    fecha_reparacion        = Column(DateTime(timezone=True))
+    fecha_actualizacion     = Column(DateTime(timezone=True), onupdate=func.now())
+    usuario_id              = Column(Integer, ForeignKey("auth.usuarios.id", ondelete="SET NULL"), nullable=True)
