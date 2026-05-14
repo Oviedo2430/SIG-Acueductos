@@ -64,11 +64,11 @@ export default function Sidebar() {
 
       {/* Footer Sensei */}
       <div style={{ padding: '16px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
-        <div className="text-xs text-muted" style={{ marginBottom: 8 }}>
+        <div className="text-xs text-muted" style={{ marginBottom: 12 }}>
           Diseñado y Desarrollado por:
         </div>
-        <a href="https://www.senseiconsultoria.com" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', opacity: 0.9, transition: 'opacity 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}>
-          <img src="/logo-sensei.png" alt="SENSEI Consultoría y Comunicaciones" style={{ maxWidth: '140px', height: 'auto', display: 'block', margin: '0 auto' }} />
+        <a href="https://www.senseiconsultoria.com" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.filter = 'brightness(1.2)' }} onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.filter = 'none' }}>
+          <img src="/logo-sensei.png" alt="SENSEI Consultoría y Comunicaciones" style={{ maxWidth: '140px', height: 'auto', display: 'block', margin: '0 auto', filter: 'drop-shadow(0px 0px 12px rgba(255, 255, 255, 0.4)) drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.6))' }} />
         </a>
       </div>
     </aside>
