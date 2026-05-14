@@ -9,6 +9,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Declarar argumentos de construcción para Vite
+ARG VITE_API_URL
+ARG VITE_TILES_URL
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_TILES_URL=$VITE_TILES_URL
+
 # Instalar dependencias
 COPY package.json package-lock.json* ./
 RUN npm install
