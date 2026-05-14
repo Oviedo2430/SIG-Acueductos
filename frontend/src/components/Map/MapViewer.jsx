@@ -1,6 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useMapStore, LAYERS } from '../../store/mapStore'
 
 // Coordenadas del casco urbano de Labateca
@@ -57,8 +59,9 @@ const ESTADO_COLORS = { Bueno: '#22c55e', Regular: '#f59e0b', Malo: '#ef4444', C
 export default function MapViewer({ onFeatureClick }) {
   const mapContainer = useRef(null)
   const map = useRef(null)
+  const draw = useRef(null)
   const popup = useRef(null)
-  const { visibleLayers, setSelectedFeature } = useMapStore()
+  const { visibleLayers, setSelectedFeature, setDrawnFeature } = useMapStore()
 
   // Inicializar mapa
   useEffect(() => {
@@ -77,14 +80,43 @@ export default function MapViewer({ onFeatureClick }) {
 
     popup.current = new maplibregl.Popup({ closeButton: true, maxWidth: '280px' })
 
+    // Inicializar MapboxDraw
+    draw.current = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {
+        point: true,
+        line_string: true,
+        polygon: true,
+        trash: true
+      }
+    })
+    // Colocarlo a la derecha donde están los otros controles (así heredan mejor los estilos por defecto de Mapbox si hay conflicto de CSS)
+    map.current.addControl(draw.current, 'top-right')
+
     map.current.on('load', () => {
       addSources()
       addLayers()
       addClickHandlers()
+      addDrawHandlers()
     })
 
-    return () => { map.current?.remove(); map.current = null }
+    return () => { map.current?.remove(); map.current = null; draw.current = null }
   }, [])
+
+  const addDrawHandlers = () => {
+    const updateDraw = (e) => {
+      const data = draw.current.getAll()
+      if (data.features.length > 0) {
+        // Enviar la última geometría dibujada/modificada al store
+        setDrawnFeature(data.features[data.features.length - 1])
+      } else {
+        setDrawnFeature(null)
+      }
+    }
+    map.current.on('draw.create', updateDraw)
+    map.current.on('draw.update', updateDraw)
+    map.current.on('draw.delete', updateDraw)
+  }
 
   const addSources = () => {
     const m = map.current
@@ -228,7 +260,7 @@ export default function MapViewer({ onFeatureClick }) {
     <div ref={mapContainer} style={{ width: '100%', height: '100%' }}>
       {/* Badge de demo */}
       <div style={{
-        position: 'absolute', top: 12, left: 12, zIndex: 10,
+        position: 'absolute', bottom: 30, left: 20, zIndex: 5,
         background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)',
         color: '#fcd34d', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600,
       }}>
