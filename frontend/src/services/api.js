@@ -1,7 +1,12 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || '/api' })
+let baseUrl = import.meta.env.VITE_API_URL || '/api'
+// Hack para limpiar un bug raro de EasyPanel donde inyecta "VITE_API_URL=" dentro del valor
+if (baseUrl.startsWith('VITE_API_URL=')) {
+  baseUrl = baseUrl.replace('VITE_API_URL=', '')
+}
+const api = axios.create({ baseURL: baseUrl })
 
 // Adjuntar token JWT a cada petición
 api.interceptors.request.use((config) => {
