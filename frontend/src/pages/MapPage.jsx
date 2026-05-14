@@ -1,12 +1,41 @@
 import { useState } from 'react'
 import MapViewer from '../components/Map/MapViewer'
 import { useMapStore, LAYERS } from '../store/mapStore'
+import ElementForm from '../components/forms/ElementForm'
+import { redApi } from '../services/api'
 
 export default function MapPage() {
   const [selectedFeature, setSelectedFeature] = useState(null)
   const [showColorPanel, setShowColorPanel] = useState(true)
   const [showLegend, setShowLegend] = useState(true)
-  const { colorBy, setColorBy, drawnFeature } = useMapStore()
+  const [creationType, setCreationType] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  const { colorBy, setColorBy, drawnFeature, setDrawnFeature } = useMapStore()
+
+  const handleCreateElement = async (formData) => {
+    try {
+      setIsSaving(true)
+      // Enviar a la base de datos a través de la API
+      const payload = {
+        ...formData,
+        geom: drawnFeature.geometry
+      }
+      await redApi[creationType].create(payload)
+      
+      // Limpiar el estado de dibujo
+      setCreationType(null)
+      setDrawnFeature(null)
+      useMapStore.getState().triggerDrawAction('trash', null)
+      
+      alert('Elemento guardado correctamente. (El refresco del mapa se añadirá en el siguiente paso)')
+    } catch (error) {
+      console.error('Error al guardar:', error)
+      alert('Ocurrió un error al guardar. Verifica la consola.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div style={{ position: 'relative', height: 'calc(100vh - var(--topbar-h))', width: '100%' }}>
@@ -49,33 +78,48 @@ export default function MapPage() {
           boxShadow: 'var(--shadow-lg)', minWidth: 260, maxWidth: 320,
           animation: 'fadeIn .2s ease',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
-              ✨ Nueva Geometría Dibujada
-            </span>
-          </div>
-          <div className="text-xs text-muted mb-3">
-            Tipo: <strong style={{color: 'var(--fg)'}}>{drawnFeature.geometry.type}</strong>
-          </div>
-          <div style={{ fontSize: 13, marginBottom: 10 }}>
-            ¿Qué deseas hacer con este elemento?
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {drawnFeature.geometry.type === 'LineString' && (
-              <button className="btn btn-primary btn-sm w-full" onClick={() => alert('Crear Tubería - Próxima fase')}>Crear Tubería</button>
-            )}
-            {drawnFeature.geometry.type === 'Point' && (
-              <>
-                <button className="btn btn-primary btn-sm w-full" onClick={() => alert('Crear Nodo - Próxima fase')}>Crear Nodo</button>
-                <button className="btn btn-outline btn-sm w-full">Crear Válvula</button>
-                <button className="btn btn-outline btn-sm w-full">Crear Tanque</button>
-              </>
-            )}
-            {drawnFeature.geometry.type === 'Polygon' && (
-              <button className="btn btn-primary btn-sm w-full">Seleccionar Área (Simulación)</button>
-            )}
-            <button className="btn btn-ghost btn-sm w-full" style={{marginTop: 4, color: 'var(--danger)'}} onClick={() => useMapStore.getState().triggerDrawAction('trash', null)}>Cancelar / Borrar</button>
-          </div>
+          {!creationType ? (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+                  ✨ Nueva Geometría Dibujada
+                </span>
+              </div>
+              <div className="text-xs text-muted mb-3">
+                Tipo: <strong style={{color: 'var(--fg)'}}>{drawnFeature.geometry.type}</strong>
+              </div>
+              <div style={{ fontSize: 13, marginBottom: 10 }}>
+                ¿Qué deseas hacer con este elemento?
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {drawnFeature.geometry.type === 'LineString' && (
+                  <button className="btn btn-primary btn-sm w-full" onClick={() => setCreationType('tuberias')}>Crear Tubería</button>
+                )}
+                {drawnFeature.geometry.type === 'Point' && (
+                  <>
+                    <button className="btn btn-primary btn-sm w-full" onClick={() => setCreationType('nodos')}>Crear Nodo</button>
+                    <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('valvulas')}>Crear Válvula</button>
+                    <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('tanques')}>Crear Tanque</button>
+                  </>
+                )}
+                {drawnFeature.geometry.type === 'Polygon' && (
+                  <button className="btn btn-primary btn-sm w-full">Seleccionar Área (Simulación)</button>
+                )}
+                <button className="btn btn-ghost btn-sm w-full" style={{marginTop: 4, color: 'var(--danger)'}} onClick={() => {
+                  useMapStore.getState().triggerDrawAction('trash', null)
+                }}>
+                  Cancelar / Borrar
+                </button>
+              </div>
+            </>
+          ) : (
+            <ElementForm
+              layerType={creationType}
+              isSaving={isSaving}
+              onCancel={() => setCreationType(null)}
+              onSubmit={handleCreateElement}
+            />
+          )}
         </div>
       )}
 

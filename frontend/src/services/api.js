@@ -27,12 +27,20 @@ api.interceptors.response.use(
 export default api
 
 // ── Endpoints de red ──────────────────────────────────────
+const crud = (path) => ({
+  list:   (p) => api.get(path, { params: p }),
+  get:    (id) => api.get(`${path}/${id}`),
+  create: (data) => api.post(path, data),
+  update: (id, data) => api.put(`${path}/${id}`, data),
+  delete: (id) => api.delete(`${path}/${id}`),
+})
+
 export const redApi = {
-  tuberias:  { list: (p) => api.get('/tuberias', { params: p }),  get: (id) => api.get(`/tuberias/${id}`) },
-  nodos:     { list: (p) => api.get('/nodos', { params: p }),     get: (id) => api.get(`/nodos/${id}`) },
-  valvulas:  { list: (p) => api.get('/valvulas', { params: p }),  get: (id) => api.get(`/valvulas/${id}`) },
-  tanques:   { list: (p) => api.get('/tanques', { params: p }),   get: (id) => api.get(`/tanques/${id}`) },
-  fuentes:   { list: (p) => api.get('/fuentes', { params: p }),   get: (id) => api.get(`/fuentes/${id}`) },
+  tuberias: crud('/tuberias'),
+  nodos:    crud('/nodos'),
+  valvulas: crud('/valvulas'),
+  tanques:  crud('/tanques'),
+  fuentes:  crud('/fuentes'),
 }
 
 // ── Importación de shapefiles ─────────────────────────────
