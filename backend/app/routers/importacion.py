@@ -270,7 +270,7 @@ async def importar_epanet(
             if not res.coordinates: continue
             x, y = transformer.transform(res.coordinates[0], res.coordinates[1])
             obj = Fuente(
-                codigo=name, nombre=name, tipo="Reservorio",
+                codigo=name, nombre=name, tipo="Bocatoma",
                 cota_piezometrica_msnm=res.base_head or 0.0,
                 geom=from_shape(Point(x, y), srid=4326),
                 usuario_id=current_user.id
