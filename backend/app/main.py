@@ -55,9 +55,9 @@ async def _seed_admin_user():
             hashed = get_password_hash(settings.INITIAL_ADMIN_PASSWORD)
             await db.execute(
                 text("""
-                    UPDATE auth.usuarios
-                    SET hashed_password = :pwd
-                    WHERE email = :email
+                    INSERT INTO auth.usuarios (email, hashed_password, nombre_completo, rol, activo)
+                    VALUES (:email, :pwd, 'Administrador Principal', 'admin', true)
+                    ON CONFLICT (email) DO UPDATE SET hashed_password = :pwd
                 """),
                 {"pwd": hashed, "email": settings.INITIAL_ADMIN_EMAIL}
             )
