@@ -52,6 +52,27 @@ export default function Sidebar() {
 
         <div className="divider" />
 
+        {/* Herramientas de Dibujo */}
+        <div className="nav-section-label" style={{ padding: '0 2px', marginBottom: '8px', marginTop: '12px' }}>
+          Herramientas de Dibujo
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '0 4px' }}>
+          <button className="btn btn-outline btn-sm" onClick={() => useMapStore.getState().triggerDrawAction('mode', 'draw_point')} style={{ justifyContent: 'flex-start', background: 'transparent' }}>
+            📍 Punto
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => useMapStore.getState().triggerDrawAction('mode', 'draw_line_string')} style={{ justifyContent: 'flex-start', background: 'transparent' }}>
+            📏 Línea
+          </button>
+          <button className="btn btn-outline btn-sm" onClick={() => useMapStore.getState().triggerDrawAction('mode', 'draw_polygon')} style={{ justifyContent: 'flex-start', background: 'transparent' }}>
+            ⬟ Polígono
+          </button>
+          <button className="btn btn-ghost btn-sm" onClick={() => useMapStore.getState().triggerDrawAction('trash', null)} style={{ color: 'var(--danger)', justifyContent: 'flex-start' }}>
+            🗑️ Borrar selección
+          </button>
+        </div>
+
+        <div className="divider" style={{ marginTop: '12px' }} />
+
         {/* Info de la red */}
         <div style={{ padding: '4px 8px' }}>
           <div className="text-xs text-muted" style={{ marginBottom: 6 }}>Red activa</div>

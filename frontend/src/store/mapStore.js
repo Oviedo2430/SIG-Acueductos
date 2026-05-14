@@ -29,4 +29,8 @@ export const useMapStore = create((set) => ({
   // Geometría dibujada recientemente (para modo edición/creación)
   drawnFeature: null,
   setDrawnFeature: (f) => set({ drawnFeature: f }),
+
+  // Acciones de la herramienta de dibujo (disparadas desde Sidebar)
+  drawAction: null,
+  triggerDrawAction: (type, value) => set({ drawAction: { type, value, timestamp: Date.now() } }),
 }))

@@ -61,7 +61,17 @@ export default function MapViewer({ onFeatureClick }) {
   const map = useRef(null)
   const draw = useRef(null)
   const popup = useRef(null)
-  const { visibleLayers, setSelectedFeature, setDrawnFeature } = useMapStore()
+  const { visibleLayers, setSelectedFeature, setDrawnFeature, drawAction } = useMapStore()
+
+  // Escuchar acciones de dibujo desde el Sidebar
+  useEffect(() => {
+    if (!drawAction || !draw.current) return
+    if (drawAction.type === 'mode') {
+      try { draw.current.changeMode(drawAction.value) } catch (e) { console.error('Error setting draw mode', e) }
+    } else if (drawAction.type === 'trash') {
+      try { draw.current.trash() } catch (e) { console.error('Error trashing feature', e) }
+    }
+  }, [drawAction])
 
   // Inicializar mapa
   useEffect(() => {
@@ -83,7 +93,45 @@ export default function MapViewer({ onFeatureClick }) {
     // Inicializar MapboxDraw
     draw.current = new MapboxDraw({
       displayControlsDefault: false,
-      controls: {} // Ocultamos los botones por defecto porque tenemos nuestra propia UI en React
+      controls: {}, // Ocultamos los botones por defecto porque tenemos nuestra propia UI en React
+      styles: [
+        // Estilo de líneas dibujadas (estado activo)
+        {
+          id: 'gl-draw-line',
+          type: 'line',
+          filter: ['all', ['==', '$type', 'LineString'], ['!=', 'mode', 'static']],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#38bdf8', 'line-dasharray': [0.2, 2], 'line-width': 4 }
+        },
+        // Estilo de polígonos
+        {
+          id: 'gl-draw-polygon-fill',
+          type: 'fill',
+          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+          paint: { 'fill-color': '#a78bfa', 'fill-outline-color': '#a78bfa', 'fill-opacity': 0.2 }
+        },
+        {
+          id: 'gl-draw-polygon-stroke-active',
+          type: 'line',
+          filter: ['all', ['==', '$type', 'Polygon'], ['!=', 'mode', 'static']],
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: { 'line-color': '#a78bfa', 'line-dasharray': [0.2, 2], 'line-width': 2 }
+        },
+        // Estilo de puntos y vértices
+        {
+          id: 'gl-draw-point-active',
+          type: 'circle',
+          filter: ['all', ['==', '$type', 'Point'], ['!=', 'meta', 'midpoint']],
+          paint: { 'circle-radius': 6, 'circle-color': '#34d399', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
+        },
+        // Puntos intermedios (midpoints) al editar
+        {
+          id: 'gl-draw-point-mid',
+          type: 'circle',
+          filter: ['all', ['==', '$type', 'Point'], ['==', 'meta', 'midpoint']],
+          paint: { 'circle-radius': 4, 'circle-color': '#fb923c', 'circle-stroke-width': 1, 'circle-stroke-color': '#fff' }
+        }
+      ]
     })
     // Es necesario agregarlo al mapa para que inyecte la capa SVG de dibujo invisible
     map.current.addControl(draw.current, 'bottom-left')
@@ -111,6 +159,15 @@ export default function MapViewer({ onFeatureClick }) {
     map.current.on('draw.create', updateDraw)
     map.current.on('draw.update', updateDraw)
     map.current.on('draw.delete', updateDraw)
+
+    // Prevenir que el doble clic haga zoom cuando estamos dibujando líneas/polígonos (para poder finalizarlos)
+    map.current.on('draw.modechange', (e) => {
+      if (e.mode === 'draw_line_string' || e.mode === 'draw_polygon') {
+        map.current.doubleClickZoom.disable()
+      } else {
+        map.current.doubleClickZoom.enable()
+      }
+    })
   }
 
   const addSources = () => {
@@ -251,47 +308,8 @@ export default function MapViewer({ onFeatureClick }) {
     })
   }, [visibleLayers])
 
-  // Funciones para la barra de herramientas personalizada
-  const setDrawMode = (mode) => {
-    if (!draw.current) return
-    draw.current.changeMode(mode)
-  }
-
-  const deleteSelected = () => {
-    if (!draw.current) return
-    draw.current.trash()
-  }
-
   return (
     <div ref={mapContainer} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      
-      {/* Barra de herramientas de Dibujo (Custom UI) */}
-      <div style={{
-        position: 'absolute', top: 12, right: 12, zIndex: 10,
-        display: 'flex', flexDirection: 'column', gap: 6,
-        background: 'var(--bg-card)', padding: '6px',
-        borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-lg)'
-      }}>
-        <div className="text-xs text-muted" style={{ textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>Dibujo</div>
-        
-        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_point')} title="Dibujar Punto (Nodo, Válvula, Tanque)" style={{ justifyContent: 'flex-start' }}>
-          📍 Punto
-        </button>
-        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_line_string')} title="Dibujar Tubería" style={{ justifyContent: 'flex-start' }}>
-          📏 Línea
-        </button>
-        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_polygon')} title="Dibujar Área de Simulación" style={{ justifyContent: 'flex-start' }}>
-          ⬟ Polígono
-        </button>
-        
-        <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
-        
-        <button className="btn btn-ghost btn-sm" onClick={deleteSelected} title="Borrar figura seleccionada" style={{ color: 'var(--danger)', justifyContent: 'flex-start' }}>
-          🗑️ Borrar
-        </button>
-      </div>
-
       {/* Badge de demo */}
       <div style={{
         position: 'absolute', bottom: 30, left: 20, zIndex: 5,
