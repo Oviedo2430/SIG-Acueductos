@@ -14,7 +14,7 @@ class Settings(BaseSettings):
 
     # Base de datos
     DATABASE_URL: str
-    SYNC_DATABASE_URL: str
+    SYNC_DATABASE_URL: str | None = None
 
     # JWT
     SECRET_KEY: str
