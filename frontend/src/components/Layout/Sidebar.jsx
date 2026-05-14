@@ -33,7 +33,7 @@ export default function Sidebar() {
       </div>
 
       {/* Panel de capas */}
-      <div className="layer-section">
+      <div className="layer-section" style={{ flexGrow: 1 }}>
         <div className="nav-section-label" style={{ padding: '0 2px', marginBottom: '8px' }}>
           Capas de Red
         </div>
@@ -60,6 +60,16 @@ export default function Sidebar() {
             🌐 SIRGAS CTM-12 → WGS84
           </div>
         </div>
+      </div>
+
+      {/* Footer Sensei */}
+      <div style={{ padding: '16px', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+        <div className="text-xs text-muted" style={{ marginBottom: 8 }}>
+          Diseñado y Desarrollado por:
+        </div>
+        <a href="https://www.senseiconsultoria.com" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', opacity: 0.9, transition: 'opacity 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.9'}>
+          <img src="/logo-sensei.png" alt="SENSEI Consultoría y Comunicaciones" style={{ maxWidth: '140px', height: 'auto', display: 'block', margin: '0 auto' }} />
+        </a>
       </div>
     </aside>
   )
