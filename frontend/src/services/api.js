@@ -50,6 +50,10 @@ export const importApi = {
     api.post(`/importacion/shapefile/${tipo}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  uploadEpanet: (formData) =>
+    api.post('/importacion/epanet', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
   validarShapefile: (tipo, formData) =>
     api.post(`/importacion/validar/${tipo}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

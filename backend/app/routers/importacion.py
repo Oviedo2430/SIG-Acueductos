@@ -19,8 +19,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import fiona
 from fiona.crs import from_epsg
 from pyproj import Transformer
-from shapely.geometry import shape
+from shapely.geometry import shape, Point, LineString
 from geoalchemy2.shape import from_shape
+import wntr
 
 from app.database import get_db
 from app.auth.dependencies import require_role
@@ -231,4 +232,133 @@ async def validar_shapefile(
         "campos_detectados": campos_detectados,
         "campos_requeridos": required,
         "errores_muestra": errores[:10],
+    }
+
+
+@router.post("/epanet")
+async def importar_epanet(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(require_role("admin", "operador")),
+):
+    """
+    Importa un modelo de EPANET (.inp).
+    Asume que las coordenadas del INP están en EPSG:9377 (CTM-12) y las transforma a WGS84 (EPSG:4326).
+    """
+    if not file.filename.lower().endswith(".inp"):
+        raise HTTPException(400, "El archivo debe tener extensión .inp")
+
+    transformer = Transformer.from_crs("EPSG:9377", "EPSG:4326", always_xy=True)
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".inp") as tmp:
+        content = await file.read()
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        wn = wntr.network.WaterNetworkModel(tmp_path)
+    except Exception as e:
+        os.unlink(tmp_path)
+        raise HTTPException(400, f"Error al parsear archivo EPANET: {str(e)}")
+
+    importados = {"nodos": 0, "tuberias": 0, "tanques": 0, "fuentes": 0, "valvulas": 0}
+    
+    # 1. Fuentes (Reservoirs)
+    for name, res in wn.reservoirs():
+        x, y = transformer.transform(res.coordinates[0], res.coordinates[1])
+        obj = Fuente(
+            codigo=name, nombre=name, tipo="Reservorio",
+            cota_piezometrica_msnm=res.base_head,
+            geom=from_shape(Point(x, y), srid=4326),
+            usuario_id=current_user.id
+        )
+        db.add(obj)
+        importados["fuentes"] += 1
+
+    # 2. Tanques
+    for name, t in wn.tanks():
+        x, y = transformer.transform(t.coordinates[0], t.coordinates[1])
+        obj = Tanque(
+            codigo=name, nombre=name,
+            cota_fondo_msnm=t.elevation,
+            nivel_inicial_m=t.init_level, nivel_min_m=t.min_level, nivel_max_m=t.max_level,
+            diametro_m=t.diameter,
+            geom=from_shape(Point(x, y), srid=4326),
+            usuario_id=current_user.id
+        )
+        db.add(obj)
+        importados["tanques"] += 1
+
+    # 3. Nodos (Junctions)
+    node_coords = {}
+    for name, n in wn.junctions():
+        if n.coordinates:
+            x, y = transformer.transform(n.coordinates[0], n.coordinates[1])
+            pt = Point(x, y)
+        else:
+            pt = Point(0, 0)
+            
+        node_coords[name] = pt
+        
+        # WNTR maneja demanda en m3/s por defecto si el archivo no especifica LPM/LPS pero lo asume a SI units (m3/s)
+        # EPANET INP define unidades. WNTR las lee y las convierte a SI.
+        # Por seguridad, tomamos n.base_demand (m3/s) y pasamos a LPS
+        dem_lps = n.base_demand * 1000 if hasattr(n, 'base_demand') and n.base_demand else 0
+        obj = Nodo(
+            codigo=name,
+            cota_msnm=n.elevation,
+            demanda_base_lps=dem_lps,
+            geom=from_shape(pt, srid=4326),
+            usuario_id=current_user.id
+        )
+        db.add(obj)
+        importados["nodos"] += 1
+
+    # Agregar fuentes y tanques al dict de coordenadas para las tuberías
+    for name, res in wn.reservoirs():
+        x, y = transformer.transform(res.coordinates[0], res.coordinates[1])
+        node_coords[name] = Point(x, y)
+    for name, t in wn.tanks():
+        x, y = transformer.transform(t.coordinates[0], t.coordinates[1])
+        node_coords[name] = Point(x, y)
+
+    # 4. Tuberías
+    for name, p in wn.pipes():
+        start_pt = node_coords.get(p.start_node_name)
+        end_pt = node_coords.get(p.end_node_name)
+
+        if start_pt and end_pt:
+            line = LineString([start_pt, end_pt])
+            obj = Tuberia(
+                codigo=name,
+                diametro_mm=p.diameter * 1000 if p.diameter else 0, # WNTR lo pasa a metros (SI)
+                rugosidad_hw=p.roughness,
+                geom=from_shape(line, srid=4326),
+                usuario_id=current_user.id
+            )
+            db.add(obj)
+            importados["tuberias"] += 1
+            
+    # 5. Válvulas
+    for name, v in wn.valves():
+        start_pt = node_coords.get(v.start_node_name, Point(0, 0))
+        obj = Valvula(
+            codigo=name,
+            tipo=v.valve_type,
+            diametro_mm=v.diameter * 1000 if v.diameter else 0,
+            geom=from_shape(start_pt, srid=4326),
+            usuario_id=current_user.id
+        )
+        db.add(obj)
+        importados["valvulas"] += 1
+
+    await db.commit()
+    os.unlink(tmp_path)
+    
+    total = sum(importados.values())
+    return {
+        "message": "Red EPANET importada exitosamente",
+        "registros_importados": total,
+        "detalle": importados,
+        "total_errores": 0
     }

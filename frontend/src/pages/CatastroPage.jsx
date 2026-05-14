@@ -152,7 +152,8 @@ export default function CatastroPage() {
           <p className="page-subtitle">Gestión de elementos de la red de acueducto</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn btn-outline" onClick={() => setShowImport(true)}>📥 Importar shapefile</button>
+          <button className="btn btn-outline" onClick={() => setShowImport(true)}>📥 Importar .ZIP (Shapefile)</button>
+          <button className="btn btn-outline" onClick={() => setShowImport(true)} style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}>💧 Importar .INP (EPANET)</button>
           <a href="/guia-shapefile" className="btn btn-ghost">📐 Guía de campos</a>
         </div>
       </div>
@@ -298,18 +299,38 @@ function ImportModal({ onClose, defaultLayer }) {
   const [estado, setEstado] = useState(null)
   const inputRef = useRef()
 
+  const [isEpanet, setIsEpanet] = useState(false)
+
   const handleFile = (f) => {
-    if (!f?.name.endsWith('.zip')) { setEstado({ tipo: 'error', msg: 'Solo archivos .zip' }); return }
-    setFile(f); setEstado(null)
+    if (f?.name.endsWith('.inp')) {
+      setIsEpanet(true)
+      setFile(f)
+      setEstado(null)
+      return
+    }
+    if (f?.name.endsWith('.zip')) {
+      setIsEpanet(false)
+      setFile(f)
+      setEstado(null)
+      return
+    }
+    setEstado({ tipo: 'error', msg: 'Solo archivos .zip (Shapefile) o .inp (EPANET)' })
   }
 
   const handleImport = async () => {
     if (!file) return
-    setEstado({ tipo: 'loading', msg: 'Procesando shapefile...' })
+    setEstado({ tipo: 'loading', msg: 'Procesando archivo...' })
     try {
       const fd = new FormData(); fd.append('file', file)
-      const { data } = await importApi.uploadShapefile(tipo, fd)
-      setEstado({ tipo: 'success', msg: `✅ ${data.registros_importados} registros importados. ${data.total_errores > 0 ? `${data.total_errores} con errores.` : ''}` })
+      const { data } = isEpanet 
+        ? await importApi.uploadEpanet(fd)
+        : await importApi.uploadShapefile(tipo, fd)
+        
+      if (isEpanet) {
+        setEstado({ tipo: 'success', msg: `✅ ${data.registros_importados} elementos importados desde EPANET.` })
+      } else {
+        setEstado({ tipo: 'success', msg: `✅ ${data.registros_importados} registros importados. ${data.total_errores > 0 ? `${data.total_errores} con errores.` : ''}` })
+      }
       setFile(null)
     } catch (e) {
       setEstado({ tipo: 'error', msg: `❌ ${e.response?.data?.detail || 'Error al importar'}` })
@@ -320,22 +341,24 @@ function ImportModal({ onClose, defaultLayer }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
       <div className="card animate-fade" style={{ width: '100%', maxWidth: 520 }} onClick={e => e.stopPropagation()}>
         <div className="card-header">
-          <div className="card-title">📥 Importar Shapefile</div>
+          <div className="card-title">📥 Importar Archivo a la Red</div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
         </div>
 
         <div className="alert alert-info" style={{ marginBottom: '1rem', fontSize: 12 }}>
-          ℹ️ Comprime el shapefile (.shp .dbf .shx .prj) en un <strong>.zip</strong>.
-          El sistema transforma automáticamente de <strong>EPSG:9377 → WGS84</strong>.
-          <a href="/guia-shapefile" style={{ marginLeft: 6 }}>Ver guía de campos →</a>
+          ℹ️ <strong>Para Shapefiles:</strong> Sube un <strong>.zip</strong> (contiene .shp, .dbf, .shx, .prj) y selecciona la capa.<br/>
+          ℹ️ <strong>Para EPANET:</strong> Sube directamente el archivo <strong>.inp</strong>. Se importarán <strong>todas</strong> las capas (Nodos, Tuberías, Tanques, etc.) automáticamente.<br/>
+          <em>Asegúrate de que las coordenadas estén en EPSG:9377 (MAGNA-SIRGAS CTM12).</em>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '1rem' }}>
-          <label className="form-label">Tipo de capa</label>
-          <select className="form-control" value={tipo} onChange={e => setTipo(e.target.value)}>
-            {Object.entries(LAYERS).map(([id, l]) => <option key={id} value={id}>{l.label}</option>)}
-          </select>
-        </div>
+        {!isEpanet && file?.name.endsWith('.zip') && (
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label className="form-label">Tipo de capa (Shapefile)</label>
+            <select className="form-control" value={tipo} onChange={e => setTipo(e.target.value)}>
+              {Object.entries(LAYERS).filter(([id]) => id !== 'danos').map(([id, l]) => <option key={id} value={id}>{l.label}</option>)}
+            </select>
+          </div>
+        )}
 
         <div
           className={`upload-zone${dragOver ? ' drag-over' : ''}`}
@@ -345,11 +368,11 @@ function ImportModal({ onClose, defaultLayer }) {
           onDrop={e => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]) }}
           onClick={() => inputRef.current.click()}
         >
-          <input ref={inputRef} type="file" accept=".zip" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
-          <div className="upload-zone-icon">📦</div>
+          <input ref={inputRef} type="file" accept=".zip,.inp" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+          <div className="upload-zone-icon">{isEpanet ? '💧' : '📦'}</div>
           {file
             ? <><div style={{ fontWeight: 600, color: 'var(--primary)' }}>{file.name}</div><div className="upload-zone-hint">{(file.size / 1024).toFixed(0)} KB</div></>
-            : <><div className="upload-zone-text">Arrastra el .zip aquí o haz clic</div><div className="upload-zone-hint">Solo archivos .zip · Máx. 50 MB</div></>
+            : <><div className="upload-zone-text">Arrastra el .zip o .inp aquí o haz clic</div><div className="upload-zone-hint">Archivos .zip (Shape) o .inp (EPANET) · Máx. 50 MB</div></>
           }
         </div>
 
