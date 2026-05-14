@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import MapViewer from '../components/Map/MapViewer'
+import MapViewer, { forceMapRefresh } from '../components/Map/MapViewer'
 import { useMapStore, LAYERS } from '../store/mapStore'
 import ElementForm from '../components/forms/ElementForm'
 import { redApi } from '../services/api'
@@ -23,12 +23,14 @@ export default function MapPage() {
       }
       await redApi[creationType].create(payload)
       
+      // Refrescar el mapa con la nueva información desde la base de datos
+      forceMapRefresh(creationType)
+
       // Limpiar el estado de dibujo
       setCreationType(null)
       setDrawnFeature(null)
       useMapStore.getState().triggerDrawAction('trash', null)
       
-      alert('Elemento guardado correctamente. (El refresco del mapa se añadirá en el siguiente paso)')
     } catch (error) {
       console.error('Error al guardar:', error)
       alert('Ocurrió un error al guardar. Verifica la consola.')

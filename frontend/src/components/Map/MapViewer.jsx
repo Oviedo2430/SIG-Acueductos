@@ -4,6 +4,8 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useMapStore, LAYERS } from '../../store/mapStore'
+import api from '../../services/api'
+import { useAuthStore } from '../../store/authStore'
 
 // Coordenadas del casco urbano de Labateca
 const LABATECA_CENTER = [-72.4845, 7.3375]
@@ -56,6 +58,12 @@ const DEMO_DATA = {
 
 const ESTADO_COLORS = { Bueno: '#22c55e', Regular: '#f59e0b', Malo: '#ef4444', Critico: '#dc2626', Desconocido: '#94a3b8' }
 
+// Evento global para forzar refresco de las capas tras crear/editar
+export const forceMapRefresh = (layerKey) => {
+  const ev = new CustomEvent('refresh-map-layer', { detail: { layerKey } })
+  window.dispatchEvent(ev)
+}
+
 export default function MapViewer({ onFeatureClick }) {
   const mapContainer = useRef(null)
   const map = useRef(null)
@@ -77,11 +85,23 @@ export default function MapViewer({ onFeatureClick }) {
   useEffect(() => {
     if (map.current) return
 
+    const backendUrl = api.defaults.baseURL
+
     map.current = new maplibregl.Map({
       container: mapContainer.current,
       style: 'https://tiles.openfreemap.org/styles/positron',
       center: LABATECA_CENTER,
       zoom: LABATECA_ZOOM,
+      transformRequest: (url, resourceType) => {
+        if (url.startsWith(backendUrl)) {
+          const token = useAuthStore.getState().token
+          return {
+            url,
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          }
+        }
+        return { url }
+      }
     })
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right')
@@ -143,7 +163,21 @@ export default function MapViewer({ onFeatureClick }) {
       addDrawHandlers()
     })
 
-    return () => { map.current?.remove(); map.current = null; draw.current = null }
+    const handleRefresh = (e) => {
+      const { layerKey } = e.detail
+      const src = map.current?.getSource(layerKey)
+      if (src) {
+        src.setData(`${backendUrl}/${layerKey}/geojson?t=${Date.now()}`) // param ?t para forzar no cache
+      }
+    }
+    window.addEventListener('refresh-map-layer', handleRefresh)
+
+    return () => {
+      window.removeEventListener('refresh-map-layer', handleRefresh)
+      map.current?.remove()
+      map.current = null
+      draw.current = null
+    }
   }, [])
 
   const addDrawHandlers = () => {
@@ -172,9 +206,13 @@ export default function MapViewer({ onFeatureClick }) {
 
   const addSources = () => {
     const m = map.current
-    Object.keys(DEMO_DATA).forEach((key) => {
+    const backendUrl = api.defaults.baseURL
+    const layers = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes']
+    
+    layers.forEach((key) => {
       if (!m.getSource(key)) {
-        m.addSource(key, { type: 'geojson', data: DEMO_DATA[key] })
+        // En vez de DEMO_DATA, traemos desde PostGIS
+        m.addSource(key, { type: 'geojson', data: `${backendUrl}/${key}/geojson` })
       }
     })
   }
@@ -310,14 +348,7 @@ export default function MapViewer({ onFeatureClick }) {
 
   return (
     <div ref={mapContainer} style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Badge de demo */}
-      <div style={{
-        position: 'absolute', bottom: 30, left: 20, zIndex: 5,
-        background: 'rgba(245,158,11,.15)', border: '1px solid rgba(245,158,11,.4)',
-        color: '#fcd34d', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 600,
-      }}>
-        ⚠ Datos de demostración — importe el shapefile para ver la red real
-      </div>
+      {/* Badge eliminado porque ya estamos conectados a la API real */}
     </div>
   )
 }
