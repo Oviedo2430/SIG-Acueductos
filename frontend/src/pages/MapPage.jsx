@@ -12,6 +12,73 @@ export default function MapPage() {
     <div style={{ position: 'relative', height: 'calc(100vh - var(--topbar-h))', width: '100%' }}>
       <MapViewer onFeatureClick={setSelectedFeature} />
 
+      {/* Panel de feature seleccionado */}
+      {selectedFeature && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)', padding: '14px',
+          boxShadow: 'var(--shadow-lg)', minWidth: 240, maxWidth: 320,
+          animation: 'fadeIn .2s ease',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+              {LAYERS[selectedFeature._layer]?.icon} {selectedFeature.codigo || selectedFeature.nombre}
+            </span>
+            <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFeature(null)}>✕</button>
+          </div>
+          {Object.entries(selectedFeature)
+            .filter(([k]) => !['_layer', 'id'].includes(k))
+            .map(([k, v]) => (
+              <div key={k} className="map-popup-row" style={{ marginBottom: 5 }}>
+                <span className="map-popup-key">{k}</span>
+                <span className="map-popup-val">{v ?? '—'}</span>
+              </div>
+            ))
+          }
+          <button className="btn btn-outline btn-sm w-full" style={{ marginTop: 10 }}>✏️ Editar elemento</button>
+        </div>
+      )}
+
+      {/* Panel de edición de nueva geometría (Draw) */}
+      {drawnFeature && !selectedFeature && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
+          background: 'var(--bg-card)', border: '1px solid var(--primary)',
+          borderRadius: 'var(--radius-md)', padding: '14px',
+          boxShadow: 'var(--shadow-lg)', minWidth: 260, maxWidth: 320,
+          animation: 'fadeIn .2s ease',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: 13 }}>
+              ✨ Nueva Geometría Dibujada
+            </span>
+          </div>
+          <div className="text-xs text-muted mb-3">
+            Tipo: <strong style={{color: 'var(--fg)'}}>{drawnFeature.geometry.type}</strong>
+          </div>
+          <div style={{ fontSize: 13, marginBottom: 10 }}>
+            ¿Qué deseas hacer con este elemento?
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {drawnFeature.geometry.type === 'LineString' && (
+              <button className="btn btn-primary btn-sm w-full" onClick={() => alert('Crear Tubería - Próxima fase')}>Crear Tubería</button>
+            )}
+            {drawnFeature.geometry.type === 'Point' && (
+              <>
+                <button className="btn btn-primary btn-sm w-full" onClick={() => alert('Crear Nodo - Próxima fase')}>Crear Nodo</button>
+                <button className="btn btn-outline btn-sm w-full">Crear Válvula</button>
+                <button className="btn btn-outline btn-sm w-full">Crear Tanque</button>
+              </>
+            )}
+            {drawnFeature.geometry.type === 'Polygon' && (
+              <button className="btn btn-primary btn-sm w-full">Seleccionar Área (Simulación)</button>
+            )}
+            <button className="btn btn-ghost btn-sm w-full" style={{marginTop: 4, color: 'var(--danger)'}} onClick={() => useMapStore.getState().triggerDrawAction('trash', null)}>Cancelar / Borrar</button>
+          </div>
+        </div>
+      )}
+
       {/* Contenedor Flex para los paneles de control de la derecha */}
       <div style={{
         position: 'absolute', bottom: 30, right: 12, zIndex: 10,
