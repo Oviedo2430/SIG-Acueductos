@@ -83,15 +83,10 @@ export default function MapViewer({ onFeatureClick }) {
     // Inicializar MapboxDraw
     draw.current = new MapboxDraw({
       displayControlsDefault: false,
-      controls: {
-        point: true,
-        line_string: true,
-        polygon: true,
-        trash: true
-      }
+      controls: {} // Ocultamos los botones por defecto porque tenemos nuestra propia UI en React
     })
-    // Colocarlo a la derecha donde están los otros controles (así heredan mejor los estilos por defecto de Mapbox si hay conflicto de CSS)
-    map.current.addControl(draw.current, 'top-right')
+    // Es necesario agregarlo al mapa para que inyecte la capa SVG de dibujo invisible
+    map.current.addControl(draw.current, 'bottom-left')
 
     map.current.on('load', () => {
       addSources()
@@ -256,8 +251,47 @@ export default function MapViewer({ onFeatureClick }) {
     })
   }, [visibleLayers])
 
+  // Funciones para la barra de herramientas personalizada
+  const setDrawMode = (mode) => {
+    if (!draw.current) return
+    draw.current.changeMode(mode)
+  }
+
+  const deleteSelected = () => {
+    if (!draw.current) return
+    draw.current.trash()
+  }
+
   return (
-    <div ref={mapContainer} style={{ width: '100%', height: '100%' }}>
+    <div ref={mapContainer} style={{ width: '100%', height: '100%', position: 'relative' }}>
+      
+      {/* Barra de herramientas de Dibujo (Custom UI) */}
+      <div style={{
+        position: 'absolute', top: 12, right: 12, zIndex: 10,
+        display: 'flex', flexDirection: 'column', gap: 6,
+        background: 'var(--bg-card)', padding: '6px',
+        borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-lg)'
+      }}>
+        <div className="text-xs text-muted" style={{ textAlign: 'center', marginBottom: 4, fontWeight: 600 }}>Dibujo</div>
+        
+        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_point')} title="Dibujar Punto (Nodo, Válvula, Tanque)" style={{ justifyContent: 'flex-start' }}>
+          📍 Punto
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_line_string')} title="Dibujar Tubería" style={{ justifyContent: 'flex-start' }}>
+          📏 Línea
+        </button>
+        <button className="btn btn-outline btn-sm" onClick={() => setDrawMode('draw_polygon')} title="Dibujar Área de Simulación" style={{ justifyContent: 'flex-start' }}>
+          ⬟ Polígono
+        </button>
+        
+        <div style={{ height: 1, background: 'var(--border)', margin: '4px 0' }} />
+        
+        <button className="btn btn-ghost btn-sm" onClick={deleteSelected} title="Borrar figura seleccionada" style={{ color: 'var(--danger)', justifyContent: 'flex-start' }}>
+          🗑️ Borrar
+        </button>
+      </div>
+
       {/* Badge de demo */}
       <div style={{
         position: 'absolute', bottom: 30, left: 20, zIndex: 5,
