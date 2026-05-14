@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173"
 
     # Usuario administrador inicial
-    INITIAL_ADMIN_EMAIL: str = "admin@acueducto-labateca.gov.co"
-    INITIAL_ADMIN_PASSWORD: str = "Admin123!"
+    INITIAL_ADMIN_EMAIL: str = "carlosoviedo24@gmail.com"
+    INITIAL_ADMIN_PASSWORD: str = "Labateca2026"
 
     @property
     def origins_list(self) -> list[str]:

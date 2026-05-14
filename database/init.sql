@@ -248,7 +248,7 @@ END $$;
 -- Usuario administrador inicial (contraseña se actualiza via backend al primer inicio)
 INSERT INTO auth.usuarios (email, hashed_password, nombre_completo, rol)
 VALUES (
-    'admin@acueducto-labateca.gov.co',
+    'carlosoviedo24@gmail.com',
     'PLACEHOLDER_REPLACED_BY_BACKEND_ON_STARTUP',
     'Administrador del Sistema',
     'admin'
