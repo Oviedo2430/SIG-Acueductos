@@ -238,16 +238,18 @@ function DashboardContent({ stats, healthScore }) {
   return (
     <>
       {/* KPI Row */}
-      <div className="grid grid-4" style={{ marginBottom: '1.25rem' }}>
+      <div className="grid grid-6" style={{ marginBottom: '1.25rem', gridTemplateColumns: 'repeat(6, 1fr)' }}>
         {[
           { label: 'Tuberías', value: red.total_tuberias ?? '—', sub: red.km_red ? `${red.km_red} km de red` : 'en catastro', color: 'var(--layer-tuberias)' },
           { label: 'Nodos',    value: red.total_nodos ?? '—',    sub: `${red.total_valvulas ?? 0} válvulas`, color: 'var(--layer-nodos)' },
-          { label: 'Daños / Fugas', value: red.total_danos ?? 0, sub: 'Reportes de mantenimiento', color: 'var(--danger)' },
-          { label: 'Presión media', value: sim ? `${sim.presion_media} m` : '—', sub: sim ? `Última sim: ${sim.nombre}` : 'Sin simulación', color: 'var(--primary)' },
+          { label: 'Usuarios', value: stats?.usuarios?.total_usuarios ?? 0, sub: 'Registrados en nodos', color: '#8b5cf6' },
+          { label: 'Demanda Total', value: `${stats?.usuarios?.demanda_total_lps ?? 0} L/s`, sub: 'Demanda base', color: '#ec4899' },
+          { label: 'Daños / Fugas', value: red.total_danos ?? 0, sub: 'Mantenimiento', color: 'var(--danger)' },
+          { label: 'Presión media', value: sim ? `${sim.presion_media} m` : '—', sub: sim ? `Última sim` : 'Sin datos', color: 'var(--primary)' },
         ].map(({ label, value, sub, color }) => (
-          <div key={label} className="card" style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
-            <div style={{ fontWeight: 600, marginTop: 2 }}>{label}</div>
+          <div key={label} className="card" style={{ textAlign: 'center', padding: '0.75rem 0.5rem' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color }}>{value}</div>
+            <div style={{ fontWeight: 600, marginTop: 2, fontSize: 13 }}>{label}</div>
             <div className="text-muted text-xs" style={{ marginTop: 3 }}>{sub}</div>
           </div>
         ))}
@@ -276,11 +278,17 @@ function DashboardContent({ stats, healthScore }) {
         </div>
       </div>
 
-      {/* Fila 2: Diámetros + Presiones por nodo */}
-      <div className="grid grid-2" style={{ marginBottom: '1rem' }}>
+      {/* Fila 2: Diámetros + Presiones por nodo + Usuarios */}
+      <div className="grid grid-3" style={{ marginBottom: '1rem', gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="card" style={{ padding: '0.75rem' }}>
           <ReactECharts
-            option={makeBar(stats?.diametros_tuberias || {}, 'Distribución por diámetro', MATERIAL_COLORS)}
+            option={makeDonut(stats?.usuarios?.por_tipo || { 'Sin datos': 1 }, 'Distribución de Usuarios')}
+            style={{ height: 220 }}
+          />
+        </div>
+        <div className="card" style={{ padding: '0.75rem' }}>
+          <ReactECharts
+            option={makeBar(stats?.diametros_tuberias || {}, 'Tuberías por diámetro', MATERIAL_COLORS)}
             style={{ height: 220 }}
           />
         </div>
@@ -342,4 +350,5 @@ const DEMO_STATS_FE = {
   ultima_simulacion: { id: null, nombre: 'Demo', presion_min: 14.2, presion_max: 34.8, presion_media: 24.5, nodos_criticos: 1, nodos_total: 6 },
   historial_simulaciones: [],
   presiones_nodos: { 'NOD-001': 28.5, 'NOD-002': 24.3, 'NOD-003': 19.8, 'NOD-004': 22.1, 'NOD-005': 17.4, 'NOD-006': 14.2 },
+  usuarios: { total_usuarios: 1520, demanda_total_lps: 12.5, por_tipo: { Residencial: 1400, Comercial: 100, Institucional: 20 } },
 }

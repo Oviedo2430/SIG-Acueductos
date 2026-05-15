@@ -51,6 +51,11 @@ DEMO_STATS = {
         "NOD-001": 28.5, "NOD-002": 24.3, "NOD-003": 19.8,
         "NOD-004": 22.1, "NOD-005": 17.4, "NOD-006": 14.2,
     },
+    "usuarios": {
+        "total_usuarios": 1520,
+        "demanda_total_lps": 12.5,
+        "por_tipo": {"Residencial": 1400, "Comercial": 100, "Institucional": 20}
+    }
 }
 
 
@@ -136,9 +141,26 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
             "fecha": s.fecha_creacion.isoformat() if s.fecha_creacion else None,
             "presion_min": s.presion_min_mca, "presion_max": s.presion_max_mca,
             "presion_media": s.presion_media_mca, "nodos_criticos": s.nodos_criticos,
-        }
         for s in hist_res.scalars().all()
     ]
+
+    # ── Consumos y usuarios ──────────────────────────────────
+    usuarios_res = await db.execute(
+        select(
+            func.sum(Nodo.num_usuarios).label("total_usuarios"),
+            func.sum(Nodo.demanda_base_lps).label("demanda_total_lps")
+        )
+    )
+    u_row = usuarios_res.fetchone()
+    total_usuarios = int(u_row.total_usuarios or 0)
+    demanda_total_lps = float(u_row.demanda_total_lps or 0.0)
+
+    tipo_usu_res = await db.execute(
+        select(Nodo.tipo_usuario, func.sum(Nodo.num_usuarios).label("n"))
+        .where(Nodo.tipo_usuario.is_not(None))
+        .group_by(Nodo.tipo_usuario)
+    )
+    usuarios_por_tipo = {row.tipo_usuario: int(row.n or 0) for row in tipo_usu_res if row.tipo_usuario}
 
     return {
         "es_demo": False,
@@ -153,6 +175,11 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
         "ultima_simulacion": ultima_sim_data,
         "historial_simulaciones": historial,
         "presiones_nodos": presiones_nodos,
+        "usuarios": {
+            "total_usuarios": total_usuarios,
+            "demanda_total_lps": round(demanda_total_lps, 2),
+            "por_tipo": usuarios_por_tipo
+        }
     }
 
 
