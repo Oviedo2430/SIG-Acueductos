@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
             SELECT column_name FROM information_schema.columns 
             WHERE table_schema='hidraulica' AND table_name='simulaciones' AND column_name='tipo'
         """))
-        if res.fetchone():
+        if not res.fetchone():
             print("⚠️ Detectado esquema obsoleto de hidraulica.simulaciones. Recreando tablas...")
             await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_nodo CASCADE;"))
             await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_tuberia CASCADE;"))
