@@ -141,6 +141,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
             "fecha": s.fecha_creacion.isoformat() if s.fecha_creacion else None,
             "presion_min": s.presion_min_mca, "presion_max": s.presion_max_mca,
             "presion_media": s.presion_media_mca, "nodos_criticos": s.nodos_criticos,
+        }
         for s in hist_res.scalars().all()
     ]
 
