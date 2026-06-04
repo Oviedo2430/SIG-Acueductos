@@ -276,3 +276,12 @@ VALUES (
     'Administrador del Sistema',
     'admin'
 ) ON CONFLICT (email) DO NOTHING;
+
+-- Usuario para pruebas de la interfaz
+INSERT INTO auth.usuarios (email, hashed_password, nombre_completo, rol)
+VALUES (
+    'ingjuanpablomm@gmail.com',
+    '$2b$12$2HQXoevHYoGHoWg4IaAtL.PntJntPGw3bSQE220lMF7AqCvQNDiLa',
+    'Juan Pablo (Pruebas)',
+    'admin'
+) ON CONFLICT (email) DO NOTHING;
