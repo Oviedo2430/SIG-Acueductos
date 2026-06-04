@@ -207,6 +207,7 @@ export default function MapViewer({ onFeatureClick }) {
   const addSources = () => {
     const m = map.current
     const backendUrl = api.defaults.baseURL
+    const token = useAuthStore.getState().token
     const layers = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes', 'danos']
     
     layers.forEach((key) => {
@@ -215,6 +216,24 @@ export default function MapViewer({ onFeatureClick }) {
         m.addSource(key, { type: 'geojson', data: `${backendUrl}/${key}/geojson` })
       }
     })
+
+    // Centrar dinámicamente el mapa en la red cargada usando la capa de nodos
+    fetch(`${backendUrl}/nodos/geojson`, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data && data.features && data.features.length > 0) {
+        const bounds = new maplibregl.LngLatBounds();
+        data.features.forEach(f => {
+          if (f.geometry && f.geometry.type === 'Point' && f.geometry.coordinates) {
+            bounds.extend(f.geometry.coordinates);
+          }
+        });
+        m.fitBounds(bounds, { padding: 60, duration: 2000 });
+      }
+    })
+    .catch(err => console.error('Error al intentar centrar el mapa:', err));
   }
 
   const addLayers = () => {
