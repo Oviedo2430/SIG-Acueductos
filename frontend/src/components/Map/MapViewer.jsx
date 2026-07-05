@@ -418,10 +418,14 @@ export default function MapViewer({ onFeatureClick }) {
         let hasData = false
         
         Object.entries(presiones).forEach(([codigo, p]) => {
+          // Ignorar fuentes/embalses (suelen tener presión 0 por definición hidráulica)
+          if (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) {
+            return;
+          }
           hasData = true
           matchExpr.push(codigo)
-          // Rango de colores de presión: <5 rojo, <10 amarillo, <40 verde, >40 azul
-          matchExpr.push(p < 5 ? '#dc2626' : p < 10 ? '#f59e0b' : p < 40 ? '#10b981' : '#3b82f6')
+          // Rango de colores de presión: <5 rojo, <10 naranja, <20 amarillo, <35 verde, >=35 azul
+          matchExpr.push(p < 5 ? '#ef4444' : p < 10 ? '#f97316' : p < 20 ? '#eab308' : p < 35 ? '#22c55e' : '#3b82f6')
         })
         
         matchExpr.push(LAYERS.nodos.color) // Color por defecto (gris) si no tiene presión
