@@ -4,7 +4,7 @@ from sqlalchemy import select, func, desc
 from typing import List
 
 from app.database import get_db
-from app.auth.dependencies import require_role, get_current_active_user
+from app.auth.dependencies import require_role, get_current_user
 from app.models.red import LecturaMacromedidor, Nodo
 from app.schemas.perdidas import LecturaMacromedidorCreate, LecturaMacromedidorResponse
 from app.models.usuarios import Usuario
@@ -17,7 +17,7 @@ CanEdit = Depends(require_role(["Admin", "Operador"]))
 async def registrar_lectura(
     req: LecturaMacromedidorCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: Usuario = Depends(get_current_active_user)
+    current_user: Usuario = Depends(get_current_user)
 ):
     # Validar rol manual por seguridad
     if current_user.rol not in ["Admin", "Operador"]:
@@ -61,7 +61,7 @@ async def registrar_lectura(
 async def obtener_historial_lecturas(
     limit: int = 50,
     db: AsyncSession = Depends(get_db),
-    _ = Depends(get_current_active_user)
+    _ = Depends(get_current_user)
 ):
     query = select(LecturaMacromedidor).order_by(desc(LecturaMacromedidor.fecha_lectura)).limit(limit)
     res = await db.execute(query)
