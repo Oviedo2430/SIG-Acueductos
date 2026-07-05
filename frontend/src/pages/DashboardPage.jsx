@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import ReactECharts from 'echarts-for-react'
-import api from '../services/api'
+import api, { perdidasApi } from '../services/api'
 
 // ── Paleta de colores para charts ────────────────────────────
 const C = {
@@ -141,6 +141,26 @@ function makeGauge(score) {
   }
 }
 
+// ── Chart Historial de Pérdidas (Caudal Mínimo Nocturno) ──
+function makePerdidasHistorial(lecturas) {
+  if (!lecturas || lecturas.length === 0) return {}
+  const l = [...lecturas].reverse() // chronological
+  const fechas = l.map(d => new Date(d.fecha_lectura).toLocaleDateString())
+  return {
+    ...baseStyle,
+    title: { text: 'Evolución de Fugas (CMN)', textStyle: { color: '#f0f6ff', fontSize: 13, fontWeight: 600 }, top: 6, left: 10 },
+    legend: { ...baseStyle.legend, data: ['CMN (L/s)', 'Fugas Físicas (L/s)'], top: 6, right: 10 },
+    grid: { left: '6%', right: '4%', top: 45, bottom: 28 },
+    xAxis: { type: 'category', data: fechas, axisLabel: { color: '#94a3b8', fontSize: 10 }, axisLine: { lineStyle: { color: '#2a3a52' } } },
+    yAxis: { type: 'value', axisLabel: { color: '#94a3b8', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a2436' } }, name: 'L/s', nameTextStyle: { color: '#94a3b8' } },
+    series: [
+      { name: 'CMN (L/s)', type: 'line', data: l.map(d => d.caudal_cm_lps), smooth: true, lineStyle: { color: C.primary }, itemStyle: { color: C.primary }, areaStyle: { color: `${C.primary}22` } },
+      { name: 'Fugas Físicas (L/s)',  type: 'line', data: l.map(d => d.fugas_lps), smooth: true, lineStyle: { color: C.danger }, itemStyle: { color: C.danger }, areaStyle: { color: `${C.danger}22` } },
+    ],
+    tooltip: { ...baseStyle.tooltip, trigger: 'axis' },
+  }
+}
+
 // ── Cálculo de score de salud de la red ──────────────────────
 function calcHealthScore(stats) {
   if (!stats) return 75
@@ -170,12 +190,35 @@ function ExportButton({ label, url, filename }) {
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────
 export default function DashboardPage() {
   const [lastUpdate] = useState(new Date().toLocaleString('es-CO'))
+  const qc = useQueryClient()
+  const [showMacromedidorModal, setShowMacromedidorModal] = useState(false)
+  const [showHistorialModal, setShowHistorialModal] = useState(false)
 
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => api.get('/reportes/dashboard-stats').then(r => r.data),
     retry: false,
     refetchInterval: 60_000,
+  })
+
+  const { data: lecturas } = useQuery({
+    queryKey: ['perdidas-lecturas'],
+    queryFn: () => perdidasApi.getLecturas().then(r => r.data),
+    retry: false,
+  })
+
+  const registrarLectura = useMutation({
+    mutationFn: (data) => perdidasApi.registrarLectura(data),
+    onSuccess: () => {
+      qc.invalidateQueries(['perdidas-lecturas'])
+      setShowMacromedidorModal(false)
+    },
+    onError: (err) => alert(err.response?.data?.detail || 'Error al registrar')
+  })
+
+  const eliminarLectura = useMutation({
+    mutationFn: (id) => perdidasApi.eliminarLectura(id),
+    onSuccess: () => qc.invalidateQueries(['perdidas-lecturas'])
   })
 
   const healthScore = calcHealthScore(stats)
@@ -224,12 +267,36 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DashboardContent stats={stats} healthScore={healthScore} lastUpdate={lastUpdate} />
+      <DashboardContent 
+        stats={stats} 
+        healthScore={healthScore} 
+        lastUpdate={lastUpdate} 
+        lecturas={lecturas}
+        onOpenModal={() => setShowMacromedidorModal(true)}
+        onOpenHistorial={() => setShowHistorialModal(true)}
+      />
+
+      {showMacromedidorModal && (
+        <MacromedidorModal 
+          onClose={() => setShowMacromedidorModal(false)}
+          onConfirm={(data) => registrarLectura.mutate(data)}
+          isLoading={registrarLectura.isPending}
+        />
+      )}
+
+      {showHistorialModal && (
+        <HistorialLecturasModal
+          lecturas={lecturas}
+          onClose={() => setShowHistorialModal(false)}
+          onDelete={(id) => eliminarLectura.mutate(id)}
+          isDeleting={eliminarLectura.isPending}
+        />
+      )}
     </div>
   )
 }
 
-function DashboardContent({ stats, healthScore }) {
+function DashboardContent({ stats, healthScore, lecturas, onOpenModal, onOpenHistorial }) {
   const red = stats?.red || {}
   const sim = stats?.ultima_simulacion
   const hasHistorial = (stats?.historial_simulaciones || []).length > 1
@@ -238,14 +305,15 @@ function DashboardContent({ stats, healthScore }) {
   return (
     <>
       {/* KPI Row */}
-      <div className="grid grid-6" style={{ marginBottom: '1.25rem', gridTemplateColumns: 'repeat(6, 1fr)' }}>
+      <div className="grid grid-6" style={{ marginBottom: '1.25rem', gridTemplateColumns: 'repeat(7, 1fr)' }}>
         {[
           { label: 'Tuberías', value: red.total_tuberias ?? '—', sub: red.km_red ? `${red.km_red} km de red` : 'en catastro', color: 'var(--layer-tuberias)' },
           { label: 'Nodos',    value: red.total_nodos ?? '—',    sub: `${red.total_valvulas ?? 0} válvulas`, color: 'var(--layer-nodos)' },
           { label: 'Usuarios', value: stats?.usuarios?.total_usuarios ?? 0, sub: 'Registrados en nodos', color: '#8b5cf6' },
           { label: 'Demanda Total', value: `${stats?.usuarios?.demanda_total_lps ?? 0} L/s`, sub: 'Demanda base', color: '#ec4899' },
-          { label: 'Daños / Fugas', value: red.total_danos ?? 0, sub: 'Mantenimiento', color: 'var(--danger)' },
+          { label: 'Daños / Fugas', value: red.total_danos ?? 0, sub: 'Mantenimiento', color: 'var(--warning)' },
           { label: 'Presión media', value: sim ? `${sim.presion_media} m` : '—', sub: sim ? `Última sim` : 'Sin datos', color: 'var(--primary)' },
+          { label: 'Fugas Físicas', value: (lecturas && lecturas.length > 0) ? `${lecturas[0].fugas_lps} L/s` : '—', sub: 'Último CMN', color: 'var(--danger)' },
         ].map(({ label, value, sub, color }) => (
           <div key={label} className="card" style={{ textAlign: 'center', padding: '0.75rem 0.5rem' }}>
             <div style={{ fontSize: 24, fontWeight: 800, color }}>{value}</div>
@@ -276,6 +344,24 @@ function DashboardContent({ stats, healthScore }) {
             style={{ height: 210 }}
           />
         </div>
+      </div>
+
+      {/* Control de Pérdidas (Fase 9) */}
+      <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+          <div style={{ fontWeight: 600, color: '#f0f6ff' }}>Control de Pérdidas (Caudal Mínimo Nocturno)</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-outline btn-sm" onClick={onOpenHistorial}>📋 Historial</button>
+            <button className="btn btn-primary btn-sm" onClick={onOpenModal}>➕ Registrar Lectura</button>
+          </div>
+        </div>
+        {lecturas && lecturas.length > 0 ? (
+          <ReactECharts option={makePerdidasHistorial(lecturas)} style={{ height: 240 }} />
+        ) : (
+          <div style={{ height: 240, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+            No hay lecturas registradas. Registra el Caudal Mínimo Nocturno (aprox. 3:00 am) para estimar las fugas físicas.
+          </div>
+        )}
       </div>
 
       {/* Fila 2: Diámetros + Presiones por nodo + Usuarios */}
@@ -351,4 +437,92 @@ const DEMO_STATS_FE = {
   historial_simulaciones: [],
   presiones_nodos: { 'NOD-001': 28.5, 'NOD-002': 24.3, 'NOD-003': 19.8, 'NOD-004': 22.1, 'NOD-005': 17.4, 'NOD-006': 14.2 },
   usuarios: { total_usuarios: 1520, demanda_total_lps: 12.5, por_tipo: { Residencial: 1400, Comercial: 100, Institucional: 20 } },
+}
+
+// ── Modales ───────────────────────────────────────────────────
+function MacromedidorModal({ onClose, onConfirm, isLoading }) {
+  const [params, setParams] = useState({
+    fecha_lectura: new Date().toISOString().slice(0,16),
+    caudal_cm_lps: 0,
+    factor_cna: 1.5
+  })
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
+      <div className="card animate-fade" style={{ width: '100%', maxWidth: 450 }} onClick={e => e.stopPropagation()}>
+        <div className="card-header">
+          <div className="card-title">➕ Registrar Caudal Mínimo Nocturno</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Fecha y Hora de Lectura</label>
+          <input type="datetime-local" className="form-control" value={params.fecha_lectura} onChange={e => setParams({...params, fecha_lectura: e.target.value})} />
+        </div>
+        
+        <div className="form-group">
+          <label className="form-label">Caudal Mínimo Nocturno (L/s)</label>
+          <input type="number" step="0.1" className="form-control" value={params.caudal_cm_lps} onChange={e => setParams({...params, caudal_cm_lps: parseFloat(e.target.value) || 0})} />
+        </div>
+
+        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+          <label className="form-label">Factor CNA (L/hab/hora)</label>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+            Consumo Nocturno Autorizado estimado. Valor estándar: 1.5 L/hab/hora.
+          </div>
+          <input type="number" step="0.1" className="form-control" value={params.factor_cna} onChange={e => setParams({...params, factor_cna: parseFloat(e.target.value) || 0})} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(params)} disabled={isLoading}>
+            {isLoading ? '⟳ Guardando...' : '💾 Guardar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function HistorialLecturasModal({ lecturas, onClose, onDelete, isDeleting }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
+      <div className="card animate-fade" style={{ width: '100%', maxWidth: 650, maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+        <div className="card-header">
+          <div className="card-title">📋 Historial de Caudal Mínimo Nocturno</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ overflowY: 'auto', flex: 1 }}>
+          <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                <th style={{ padding: '8px 4px' }}>Fecha</th>
+                <th style={{ padding: '8px 4px' }}>CMN (L/s)</th>
+                <th style={{ padding: '8px 4px' }}>Factor CNA</th>
+                <th style={{ padding: '8px 4px' }}>Fugas Físicas (L/s)</th>
+                <th style={{ padding: '8px 4px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {lecturas?.map(l => (
+                <tr key={l.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '8px 4px' }}>{new Date(l.fecha_lectura).toLocaleString()}</td>
+                  <td style={{ padding: '8px 4px', color: 'var(--primary)', fontWeight: 600 }}>{l.caudal_cm_lps}</td>
+                  <td style={{ padding: '8px 4px' }}>{l.factor_cna}</td>
+                  <td style={{ padding: '8px 4px', color: 'var(--danger)', fontWeight: 600 }}>{l.fugas_lps}</td>
+                  <td style={{ padding: '8px 4px', textAlign: 'right' }}>
+                    <button className="btn btn-ghost btn-sm text-danger" onClick={() => { if(confirm('¿Eliminar registro?')) onDelete(l.id) }} disabled={isDeleting}>🗑️</button>
+                  </td>
+                </tr>
+              ))}
+              {(!lecturas || lecturas.length === 0) && (
+                <tr><td colSpan="5" style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No hay lecturas registradas.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
 }

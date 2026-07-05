@@ -126,3 +126,20 @@ class Dano(Base):
     fecha_reparacion        = Column(DateTime(timezone=True))
     fecha_actualizacion     = Column(DateTime(timezone=True), onupdate=func.now())
     usuario_id              = Column(Integer, ForeignKey("auth.usuarios.id", ondelete="SET NULL"), nullable=True)
+
+
+class LecturaMacromedidor(Base):
+    """Lectura de Caudal Mínimo Nocturno para cálculo de Fugas Físicas."""
+    __tablename__ = "lecturas_macromedidor"
+    __table_args__ = {"schema": "gis"}
+
+    id              = Column(Integer, primary_key=True, index=True)
+    fecha_lectura   = Column(DateTime(timezone=True), nullable=False)
+    caudal_cm_lps   = Column(Float, nullable=False) # Caudal Mínimo Nocturno leído
+    factor_cna      = Column(Float, default=1.5)    # Factor L/hab/hora
+    cna_lps         = Column(Float, nullable=False) # Consumo Nocturno Autorizado estimado
+    fugas_lps       = Column(Float, nullable=False) # Fugas Físicas (CMN - CNA)
+    
+    fecha_registro  = Column(DateTime(timezone=True), server_default=func.now())
+    usuario_id      = Column(Integer, ForeignKey("auth.usuarios.id", ondelete="SET NULL"), nullable=True)
+

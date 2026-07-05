@@ -48,6 +48,13 @@ export const redApi = {
   danos:    crud('/danos'),
 }
 
+export const perdidasApi = {
+  getLecturas: (params) => api.get('/perdidas/macromedidor', { params }),
+  registrarLectura: (data) => api.post('/perdidas/macromedidor', data),
+  eliminarLectura: (id) => api.delete(`/perdidas/macromedidor/${id}`)
+}
+
+
 // ── Importación de shapefiles ─────────────────────────────
 export const importApi = {
   uploadShapefile: (tipo, formData) =>
