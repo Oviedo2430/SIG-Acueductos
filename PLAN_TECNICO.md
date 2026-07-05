@@ -444,7 +444,7 @@ git push → GitHub (rama main)
 ### VERSIÓN 2.0 (Estrategia de Pérdidas y Mantenimiento)
 | Fase | Descripción | Estado |
 |---|---|---|
-| **7** | **Módulo Operativo (Catastro de Daños)**: Nueva capa en mapa para registrar reparaciones, fugas, costos y volúmenes perdidos. | 🔄 En desarrollo |
+| **7** | **Módulo Operativo (Catastro de Daños)**: Nueva capa en mapa para registrar reparaciones, fugas, costos y volúmenes perdidos. | ✅ Completada |
 | **8** | **Estrategia Comercial (Demanda Teórica)**: Cálculo automático de demanda en nodos basado en tipo y cantidad de usuarios, sin necesidad de micromedición. | 🔄 Pendiente |
 | **9** | **Control de Pérdidas (Caudal Mínimo Nocturno)**: Ingreso de lecturas de macromedidor a las 3:00 a.m. para cálculo de ANC y Fugas Físicas. | 🔄 Pendiente |
 | **10** | **Simulación con Fugas (WNTR)**: Distribución automática de fugas calculadas como "Emisores" en la simulación hidráulica para reflejar caídas de presión reales. | 🔄 Pendiente |
