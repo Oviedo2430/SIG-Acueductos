@@ -20,7 +20,7 @@ async def registrar_lectura(
     current_user: Usuario = Depends(get_current_user)
 ):
     # Validar rol manual por seguridad
-    if current_user.rol not in ["Admin", "Operador"]:
+    if current_user.rol not in ["admin", "operador"]:
         raise HTTPException(403, "No tienes permisos para registrar lecturas")
 
     # 1. Obtener la suma total de usuarios activos en la red
