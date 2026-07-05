@@ -290,17 +290,19 @@ export default function SimulacionPage() {
                                 <div style={{
                                   width: `${Math.min(100, (res.presion_mca / 50) * 100)}%`,
                                   maxWidth: 120, height: 6, borderRadius: 3,
-                                  background: presionColor(res.presion_mca),
+                                  background: (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) ? '#ec4899' : presionColor(res.presion_mca),
                                   minWidth: 4,
                                 }} />
-                                <span style={{ fontWeight: 600, color: presionColor(res.presion_mca) }}>
+                                <span style={{ fontWeight: 600, color: (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) ? '#ec4899' : presionColor(res.presion_mca) }}>
                                   {res.presion_mca}
                                 </span>
                               </div>
                             </td>
                             <td className="text-muted">{res.cota_piezometrica}</td>
                             <td>
-                              {res.presion_mca < 5 ? <span className="badge badge-danger">Crítica</span>
+                              {codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE') ? (
+                                <span className="badge" style={{ background: '#ec4899', color: '#fff', border: 'none' }}>Fuente</span>
+                              ) : res.presion_mca < 5 ? <span className="badge badge-danger">Crítica</span>
                                 : res.presion_mca < 10 ? <span className="badge badge-warning">Baja</span>
                                 : <span className="badge badge-success">OK</span>}
                             </td>

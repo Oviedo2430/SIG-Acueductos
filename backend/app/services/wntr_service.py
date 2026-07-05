@@ -214,7 +214,10 @@ def _extract_results(wn, results) -> dict:
             "caudal_lps": round(q * 1000, 3),
         }
 
-    pressures = [v["presion_mca"] for v in node_results.values() if v["presion_mca"] >= 0]
+    pressures = [
+        v["presion_mca"] for k, v in node_results.items()
+        if not (k.upper().startswith("EMB") or k.upper().startswith("FUE"))
+    ]
     return {
         "node_results": node_results,
         "pipe_results": pipe_results,
