@@ -69,7 +69,11 @@ export default function MapViewer({ onFeatureClick }) {
   const map = useRef(null)
   const draw = useRef(null)
   const popup = useRef(null)
-  const { visibleLayers, setSelectedFeature, setDrawnFeature, drawAction } = useMapStore()
+  const visibleLayers = useMapStore((state) => state.visibleLayers)
+  const setDrawnFeature = useMapStore((state) => state.setDrawnFeature)
+  const setSelectedFeature = useMapStore((state) => state.setSelectedFeature)
+  const drawAction = useMapStore((state) => state.drawAction)
+  const colorBy = useMapStore((state) => state.colorBy)
 
   // Escuchar acciones de dibujo desde el Sidebar
   useEffect(() => {
@@ -379,6 +383,55 @@ export default function MapViewer({ onFeatureClick }) {
       }
     })
   }, [visibleLayers])
+
+  // Colorear dinámicamente según selección
+  useEffect(() => {
+    if (!map.current?.isStyleLoaded()) return
+    
+    if (colorBy === 'none' || colorBy === 'estado' || colorBy === 'material') {
+      // Reset nodos a su color por defecto
+      map.current.setPaintProperty('nodos-layer', 'circle-color', LAYERS.nodos.color)
+      
+      if (colorBy === 'material') {
+        map.current.setPaintProperty('tuberias-layer', 'line-color', [
+          'match', ['get', 'material'],
+          'PVC', '#3b82f6', 'AC', '#8b5cf6', 'HF', '#64748b', 'PE', '#0ea5e9',
+          ESTADO_COLORS.Desconocido
+        ])
+      } else {
+        // Por defecto (y 'estado') colorear por estado
+        map.current.setPaintProperty('tuberias-layer', 'line-color', [
+          'match', ['get', 'estado'],
+          'Bueno', ESTADO_COLORS.Bueno, 'Regular', ESTADO_COLORS.Regular,
+          'Malo', ESTADO_COLORS.Malo, 'Critico', ESTADO_COLORS.Critico,
+          ESTADO_COLORS.Desconocido
+        ])
+      }
+    } else if (colorBy === 'presion') {
+      // Obtener las presiones de la última simulación
+      api.get('/reportes/dashboard-stats').then(res => {
+        const stats = res.data
+        const presiones = stats.presiones_nodos || {}
+        
+        // Expresión Mapbox Match para asignar colores a los códigos de nodos
+        const matchExpr = ['match', ['get', 'codigo']]
+        let hasData = false
+        
+        Object.entries(presiones).forEach(([codigo, p]) => {
+          hasData = true
+          matchExpr.push(codigo)
+          // Rango de colores de presión: <5 rojo, <10 amarillo, <40 verde, >40 azul
+          matchExpr.push(p < 5 ? '#dc2626' : p < 10 ? '#f59e0b' : p < 40 ? '#10b981' : '#3b82f6')
+        })
+        
+        matchExpr.push(LAYERS.nodos.color) // Color por defecto (gris) si no tiene presión
+        
+        if (hasData) {
+          map.current.setPaintProperty('nodos-layer', 'circle-color', matchExpr)
+        }
+      }).catch(err => console.error("Error cargando presiones para el mapa:", err))
+    }
+  }, [colorBy])
 
   return (
     <div ref={mapContainer} style={{ width: '100%', height: '100%', position: 'relative' }}>
