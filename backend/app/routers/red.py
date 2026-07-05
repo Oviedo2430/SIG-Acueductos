@@ -18,6 +18,7 @@ from app.schemas.red import (
     ValvulaCreate, ValvulaUpdate, ValvulaResponse,
     TanqueCreate, TanqueUpdate, TanqueResponse,
     FuenteCreate, FuenteUpdate, FuenteResponse,
+    DemandaTeoricaRequest, DemandaTeoricaResponse
 )
 
 router = APIRouter(tags=["Red de acueducto"])
@@ -171,6 +172,31 @@ async def eliminar_nodo(item_id: int, db: AsyncSession = Depends(get_db), _=Depe
     obj = r.scalar_one_or_none()
     if not obj: raise HTTPException(404, "Nodo no encontrado")
     await db.delete(obj); await db.commit()
+
+
+@router.post("/nodos/calcular-demandas", response_model=DemandaTeoricaResponse)
+async def calcular_demandas_teoricas(req: DemandaTeoricaRequest, db: AsyncSession = Depends(get_db), _=CanEdit):
+    query = select(Nodo).where(Nodo.num_usuarios > 0).where(Nodo.estado == "Activo")
+    r = await db.execute(query)
+    nodos = r.scalars().all()
+    
+    total_lps = 0.0
+    actualizados = 0
+    for nodo in nodos:
+        q_medio_ld = nodo.num_usuarios * req.hab_por_vivienda * req.dotacion_l_hab_dia
+        q_medio_lps = q_medio_ld / 86400.0
+        q_base_lps = q_medio_lps * req.k1
+        
+        nodo.demanda_base_lps = round(q_base_lps, 4)
+        total_lps += nodo.demanda_base_lps
+        actualizados += 1
+            
+    await db.commit()
+    return DemandaTeoricaResponse(
+        nodos_actualizados=actualizados,
+        demanda_total_lps=round(total_lps, 4),
+        mensaje="Cálculo completado exitosamente."
+    )
 
 
 # ═══════════════════════════════════════════════════════════════

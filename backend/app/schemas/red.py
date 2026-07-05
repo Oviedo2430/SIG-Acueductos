@@ -82,6 +82,17 @@ class NodoResponse(NodoBase):
     fecha_registro: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
+class DemandaTeoricaRequest(BaseModel):
+    dotacion_l_hab_dia: float = Field(120.0, description="Dotación neta o bruta por habitante al día")
+    hab_por_vivienda: float = Field(2.87, description="Promedio de habitantes por conexión")
+    k1: float = Field(1.30, description="Coeficiente de consumo máximo diario")
+
+class DemandaTeoricaResponse(BaseModel):
+    nodos_actualizados: int
+    demanda_total_lps: float
+    mensaje: str
+
+
 
 # ── Válvulas ──────────────────────────────────────────────────
 class ValvulaBase(BaseModel):

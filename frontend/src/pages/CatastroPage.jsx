@@ -82,6 +82,7 @@ export default function CatastroPage() {
   const [sorting, setSorting] = useState([])
   const [page, setPage] = useState(1)
   const [showImport, setShowImport] = useState(false)
+  const [showDemandaModal, setShowDemandaModal] = useState(false)
   const [editItem, setEditItem] = useState(null)
 
   // ── Cargar datos del layer activo ─────────────────────────
@@ -106,6 +107,16 @@ export default function CatastroPage() {
   const deleteMutation = useMutation({
     mutationFn: (id) => api.delete(`/${activeLayer}/${id}`),
     onSuccess: () => qc.invalidateQueries(['catastro', activeLayer]),
+  })
+
+  const demandaMutation = useMutation({
+    mutationFn: (params) => api.post('/nodos/calcular-demandas', params),
+    onSuccess: (res) => {
+      alert(`${res.data.mensaje} Nodos actualizados: ${res.data.nodos_actualizados}. Demanda total: ${res.data.demanda_total_lps} L/s`)
+      setShowDemandaModal(false)
+      qc.invalidateQueries(['catastro', 'nodos'])
+    },
+    onError: (err) => alert(err.response?.data?.detail || 'Error calculando demandas')
   })
 
   // ── Tabla TanStack ────────────────────────────────────────
@@ -193,6 +204,11 @@ export default function CatastroPage() {
         {data && (
           <span className="text-muted text-sm">{data.total} registros</span>
         )}
+        {activeLayer === 'nodos' && (
+          <button className="btn btn-primary btn-sm" onClick={() => setShowDemandaModal(true)} style={{ marginLeft: 16 }}>
+            📊 Calcular Demandas
+          </button>
+        )}
         <button
           className="btn btn-ghost btn-sm"
           onClick={() => api.get(`/${activeLayer}/exportar`, { params: { formato: 'excel' }, responseType: 'blob' })
@@ -272,10 +288,19 @@ export default function CatastroPage() {
         </div>
       )}
 
-      {/* ── Modal de importación ─────────────────────────── */}
-      {showImport && <ImportModal onClose={() => setShowImport(false)} defaultLayer={activeLayer} />}
+      {/* Modales */}
+      {showImport && <ImportModal layer={activeLayer} onClose={() => setShowImport(false)} onSuccess={() => {
+        setShowImport(false); qc.invalidateQueries(['catastro', activeLayer])
+      }} />}
+      
+      {showDemandaModal && (
+        <DemandaModal 
+          onClose={() => setShowDemandaModal(false)}
+          onConfirm={(params) => demandaMutation.mutate(params)}
+          isLoading={demandaMutation.isPending}
+        />
+      )}
 
-      {/* ── Modal de edición ─────────────────────────────── */}
       {editItem && (
         <EditModal
           item={editItem}
@@ -431,6 +456,50 @@ function EditModal({ item, layer, onClose, onSave, isSaving, error }) {
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn btn-primary" onClick={() => onSave(form)} disabled={isSaving}>
             {isSaving ? '⟳ Guardando...' : '💾 Guardar cambios'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal de cálculo de Demanda Teórica ───────────────────────
+function DemandaModal({ onClose, onConfirm, isLoading }) {
+  const [params, setParams] = useState({
+    dotacion_l_hab_dia: 120,
+    hab_por_vivienda: 2.87,
+    k1: 1.30
+  })
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
+      <div className="card animate-fade" style={{ width: '100%', maxWidth: 450 }} onClick={e => e.stopPropagation()}>
+        <div className="card-header">
+          <div className="card-title">📊 Calcular Demandas Teóricas</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ marginBottom: '1rem', fontSize: '14px', color: 'var(--text-secondary)' }}>
+          Este proceso calculará la <strong>Demanda Base (L/s)</strong> de todos los nodos según sus usuarios.
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Dotación (L/hab/día)</label>
+          <input type="number" step="0.1" className="form-control" value={params.dotacion_l_hab_dia} onChange={e => setParams({...params, dotacion_l_hab_dia: parseFloat(e.target.value) || 0})} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Habitantes por conexión/vivienda</label>
+          <input type="number" step="0.01" className="form-control" value={params.hab_por_vivienda} onChange={e => setParams({...params, hab_por_vivienda: parseFloat(e.target.value) || 0})} />
+        </div>
+        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+          <label className="form-label">Coeficiente Consumo Máx. Diario (k1)</label>
+          <input type="number" step="0.01" className="form-control" value={params.k1} onChange={e => setParams({...params, k1: parseFloat(e.target.value) || 0})} />
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(params)} disabled={isLoading}>
+            {isLoading ? '⟳ Calculando...' : '🚀 Calcular y Aplicar'}
           </button>
         </div>
       </div>

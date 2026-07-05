@@ -37,7 +37,10 @@ const crud = (path) => ({
 
 export const redApi = {
   tuberias: crud('/tuberias'),
-  nodos:    crud('/nodos'),
+  nodos:    {
+    ...crud('/nodos'),
+    calcularDemandas: (data) => api.post('/nodos/calcular-demandas', data)
+  },
   valvulas: crud('/valvulas'),
   tanques:  crud('/tanques'),
   fuentes:  crud('/fuentes'),
