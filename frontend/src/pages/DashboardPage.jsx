@@ -444,7 +444,8 @@ function MacromedidorModal({ onClose, onConfirm, isLoading }) {
   const [params, setParams] = useState({
     fecha_lectura: new Date().toISOString().slice(0,16),
     caudal_cm_lps: 0,
-    factor_cna: 1.5
+    factor_cna: 1.5,
+    hab_por_vivienda: 2.87
   })
 
   return (
@@ -465,12 +466,21 @@ function MacromedidorModal({ onClose, onConfirm, isLoading }) {
           <input type="number" step="0.1" className="form-control" value={params.caudal_cm_lps} onChange={e => setParams({...params, caudal_cm_lps: parseFloat(e.target.value) || 0})} />
         </div>
 
-        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
-          <label className="form-label">Factor CNA (L/hab/hora)</label>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
-            Consumo Nocturno Autorizado estimado. Valor estándar: 1.5 L/hab/hora.
+        <div className="grid grid-2" style={{ gap: '0.75rem', marginBottom: '1.5rem' }}>
+          <div className="form-group">
+            <label className="form-label">Factor CNA (L/hab/hora)</label>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+              Estándar: 1.5 L/hab/hora
+            </div>
+            <input type="number" step="0.1" className="form-control" value={params.factor_cna} onChange={e => setParams({...params, factor_cna: parseFloat(e.target.value) || 0})} />
           </div>
-          <input type="number" step="0.1" className="form-control" value={params.factor_cna} onChange={e => setParams({...params, factor_cna: parseFloat(e.target.value) || 0})} />
+          <div className="form-group">
+            <label className="form-label">Habitantes / conexión</label>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>
+              Personas por casa (Promedio)
+            </div>
+            <input type="number" step="0.1" className="form-control" value={params.hab_por_vivienda} onChange={e => setParams({...params, hab_por_vivienda: parseFloat(e.target.value) || 0})} />
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

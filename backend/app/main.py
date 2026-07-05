@@ -36,6 +36,13 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_tuberia CASCADE;"))
             await conn.execute(text("DROP TABLE IF EXISTS hidraulica.simulaciones CASCADE;"))
             
+        # Añadir hab_por_vivienda a lecturas_macromedidor si no existe
+        try:
+            await conn.execute(text("ALTER TABLE gis.lecturas_macromedidor ADD COLUMN IF NOT EXISTS hab_por_vivienda FLOAT DEFAULT 2.87;"))
+        except Exception as e:
+            pass # Si la tabla no existe aún, se creará en el create_all
+
+            
         # Crear tablas que falten según SQLAlchemy Models
         from app.database import Base
         await conn.run_sync(Base.metadata.create_all)

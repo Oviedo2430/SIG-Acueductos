@@ -137,6 +137,7 @@ class LecturaMacromedidor(Base):
     fecha_lectura   = Column(DateTime(timezone=True), nullable=False)
     caudal_cm_lps   = Column(Float, nullable=False) # Caudal Mínimo Nocturno leído
     factor_cna      = Column(Float, default=1.5)    # Factor L/hab/hora
+    hab_por_vivienda= Column(Float, default=2.87)   # Habitantes por conexión
     cna_lps         = Column(Float, nullable=False) # Consumo Nocturno Autorizado estimado
     fugas_lps       = Column(Float, nullable=False) # Fugas Físicas (CMN - CNA)
     

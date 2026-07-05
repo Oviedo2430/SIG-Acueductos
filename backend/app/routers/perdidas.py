@@ -32,8 +32,8 @@ async def registrar_lectura(
         raise HTTPException(400, "No hay usuarios registrados en los nodos para calcular el CNA.")
 
     # 2. Calcular CNA (Consumo Nocturno Autorizado)
-    # CNA = (Total Usuarios * factor_cna (L/hab/h)) / 3600 segundos
-    cna_lps = (total_usuarios * req.factor_cna) / 3600.0
+    # CNA = (Total Usuarios * hab_por_vivienda * factor_cna (L/hab/h)) / 3600 segundos
+    cna_lps = (total_usuarios * req.hab_por_vivienda * req.factor_cna) / 3600.0
 
     # 3. Calcular Fugas (Pérdidas Reales)
     fugas_lps = req.caudal_cm_lps - cna_lps
@@ -45,6 +45,7 @@ async def registrar_lectura(
         fecha_lectura=req.fecha_lectura,
         caudal_cm_lps=req.caudal_cm_lps,
         factor_cna=req.factor_cna,
+        hab_por_vivienda=req.hab_por_vivienda,
         cna_lps=round(cna_lps, 3),
         fugas_lps=round(fugas_lps, 3),
         usuario_id=current_user.id

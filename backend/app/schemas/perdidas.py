@@ -6,6 +6,7 @@ class LecturaMacromedidorBase(BaseModel):
     fecha_lectura: datetime
     caudal_cm_lps: float = Field(..., description="Caudal mínimo nocturno en L/s")
     factor_cna: float = Field(1.5, description="Factor de consumo nocturno L/hab/hora")
+    hab_por_vivienda: float = Field(2.87, description="Habitantes promedio por conexión")
 
 class LecturaMacromedidorCreate(LecturaMacromedidorBase):
     pass
