@@ -7,11 +7,12 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, desc
 
 from app.database import get_db
 from app.auth.dependencies import get_current_user, require_role
 from app.models.simulacion import Simulacion
+from app.models.red import LecturaMacromedidor
 from app.schemas.simulacion import SimulacionConfig, SimulacionResponse, SimulacionDetalleResponse
 from app.services import wntr_service
 from app.models.usuarios import Usuario
@@ -50,7 +51,17 @@ async def crear_y_ejecutar_simulacion(
 
     t_start = time.perf_counter()
     try:
-        result = await wntr_service.ejecutar_simulacion(db, config.model_dump())
+        config_dict = config.model_dump()
+        
+        # Consultar la última lectura de fugas si está activado
+        if config.incluir_fugas:
+            query = select(LecturaMacromedidor).order_by(desc(LecturaMacromedidor.fecha_lectura)).limit(1)
+            res = await db.execute(query)
+            ultima_lectura = res.scalar_one_or_none()
+            if ultima_lectura:
+                config_dict["fugas_lps"] = ultima_lectura.fugas_lps
+                
+        result = await wntr_service.ejecutar_simulacion(db, config_dict)
 
         stats = result["stats"]
         sim.estado               = "completada"

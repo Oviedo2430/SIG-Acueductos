@@ -10,6 +10,7 @@ class SimulacionConfig(BaseModel):
     paso_tiempo_min: int = Field(60, ge=5, le=360)
     factor_demanda: float = Field(1.0, ge=0.1, le=5.0)
     modo_simulacion: str = "estacionaria"  # estacionaria | periodo_extendido
+    incluir_fugas: bool = False
 
 
 class SimulacionResponse(BaseModel):

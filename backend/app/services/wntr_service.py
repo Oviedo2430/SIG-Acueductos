@@ -102,6 +102,8 @@ def _build_db_model(
                     coordinates=(pt.x, pt.y))
         node_geoms[t.codigo] = pt
 
+    nodos_emisores = []
+    
     for n in nodos:
         if not n.geom:
             continue
@@ -111,6 +113,20 @@ def _build_db_model(
                         elevation=n.cota_msnm,
                         coordinates=(pt.x, pt.y))
         node_geoms[n.codigo] = pt
+        
+        if getattr(n, 'tipo', None) == 'Conexion' and getattr(n, 'estado', 'Activo') == 'Activo':
+            nodos_emisores.append(n.codigo)
+
+    # ── Fase 10: Asignar Emisores por Fugas Físicas ──
+    fugas_lps = config.get("fugas_lps", 0.0)
+    if fugas_lps > 0 and len(nodos_emisores) > 0:
+        fuga_por_nodo_lps = fugas_lps / len(nodos_emisores)
+        # Ecuación del emisor: Q = C * P^0.5
+        # Asumiendo P promedio = 20 m.c.a.
+        # WNTR requiere Q en m3/s, P en m.c.a.
+        coef_emisor = (fuga_por_nodo_lps / 1000.0) / (20.0 ** 0.5)
+        for codigo in nodos_emisores:
+            wn.get_node(codigo).emitter_coefficient = coef_emisor
 
     # Construir tuberías identificando nodos extremos por proximidad
     for i, tub in enumerate(tuberias):

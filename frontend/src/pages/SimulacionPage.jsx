@@ -23,6 +23,7 @@ const DEFAULT_CONFIG = {
   paso_tiempo_min: 60,
   factor_demanda: 1.0,
   modo_simulacion: 'estacionaria',
+  incluir_fugas: false,
 }
 
 export default function SimulacionPage() {
@@ -135,6 +136,14 @@ export default function SimulacionPage() {
                   <option value="estacionaria">Estacionaria (instantánea)</option>
                   <option value="periodo_extendido">Período extendido ({config.duracion_horas}h)</option>
                 </select>
+              </div>
+              
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: '1rem', marginBottom: '1rem' }}>
+                <input type="checkbox" id="incluir_fugas" checked={config.incluir_fugas}
+                  onChange={e => setConfig({ ...config, incluir_fugas: e.target.checked })} style={{ accentColor: 'var(--primary)', width: 16, height: 16 }} />
+                <label htmlFor="incluir_fugas" style={{ fontSize: 13, cursor: 'pointer', margin: 0, color: 'var(--text-secondary)' }}>
+                  Incluir Fugas Físicas (Caudal Mín. Nocturno)
+                </label>
               </div>
 
               <button id="btn-ejecutar-sim" type="submit" className="btn btn-primary w-full" disabled={runMutation.isPending}>
