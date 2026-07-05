@@ -92,6 +92,14 @@ class DemandaTeoricaResponse(BaseModel):
     demanda_total_lps: float
     mensaje: str
 
+class DistribuirUsuariosRequest(BaseModel):
+    total_usuarios: int
+    tipo_nodo: Optional[str] = "Todos"
+
+class DistribuirUsuariosResponse(BaseModel):
+    nodos_afectados: int
+    usuarios_por_nodo: float
+    mensaje: str
 
 
 # ── Válvulas ──────────────────────────────────────────────────

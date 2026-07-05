@@ -18,7 +18,8 @@ from app.schemas.red import (
     ValvulaCreate, ValvulaUpdate, ValvulaResponse,
     TanqueCreate, TanqueUpdate, TanqueResponse,
     FuenteCreate, FuenteUpdate, FuenteResponse,
-    DemandaTeoricaRequest, DemandaTeoricaResponse
+    DemandaTeoricaRequest, DemandaTeoricaResponse,
+    DistribuirUsuariosRequest, DistribuirUsuariosResponse
 )
 
 router = APIRouter(tags=["Red de acueducto"])
@@ -172,6 +173,33 @@ async def eliminar_nodo(item_id: int, db: AsyncSession = Depends(get_db), _=Depe
     obj = r.scalar_one_or_none()
     if not obj: raise HTTPException(404, "Nodo no encontrado")
     await db.delete(obj); await db.commit()
+
+
+@router.post("/nodos/distribuir-usuarios", response_model=DistribuirUsuariosResponse)
+async def distribuir_usuarios(req: DistribuirUsuariosRequest, db: AsyncSession = Depends(get_db), _=CanEdit):
+    # Obtener los nodos activos y, opcionalmente, filtrados por tipo
+    query = select(Nodo).where(Nodo.estado == "Activo")
+    if req.tipo_nodo and req.tipo_nodo.lower() != "todos":
+        query = query.where(func.lower(Nodo.tipo) == req.tipo_nodo.lower())
+        
+    r = await db.execute(query)
+    nodos = r.scalars().all()
+    
+    if not nodos:
+        raise HTTPException(400, f"No se encontraron nodos activos con el tipo: {req.tipo_nodo}")
+        
+    # Calcular cantidad equitativa por nodo
+    usuarios_por_nodo = req.total_usuarios / len(nodos)
+    
+    for nodo in nodos:
+        nodo.num_usuarios = round(usuarios_por_nodo, 2)
+        
+    await db.commit()
+    return DistribuirUsuariosResponse(
+        nodos_afectados=len(nodos),
+        usuarios_por_nodo=round(usuarios_por_nodo, 2),
+        mensaje="Usuarios distribuidos exitosamente."
+    )
 
 
 @router.post("/nodos/calcular-demandas", response_model=DemandaTeoricaResponse)

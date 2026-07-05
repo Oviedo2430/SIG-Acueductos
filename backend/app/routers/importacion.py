@@ -10,11 +10,13 @@ Proceso:
   7. Inserta en batch en PostgreSQL + PostGIS
 """
 import os
-import zipfile
+import shutil
 import tempfile
-from typing import Literal
-
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+import zipfile
+import pyproj
+import re
+from typing import Dict, Any, List
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 import fiona
 from fiona.crs import from_epsg
@@ -306,10 +308,19 @@ async def importar_epanet(
             node_coords[name] = pt
             
             dem_lps = n.base_demand * 1000 if hasattr(n, 'base_demand') and n.base_demand else 0
+            
+            # Extraer num_usuarios de la descripción (ej: "usuarios: 5")
+            num_usuarios = 0
+            if getattr(n, "description", None):
+                match = re.search(r'(?i)(?:usuarios|num_usu)[\s:=]*(\d+)', n.description)
+                if match:
+                    num_usuarios = int(match.group(1))
+
             obj = Nodo(
                 codigo=name,
                 cota_msnm=n.elevation or 0.0,
                 demanda_base_lps=dem_lps,
+                num_usuarios=num_usuarios,
                 geom=from_shape(pt, srid=4326),
                 usuario_id=current_user.id
             )

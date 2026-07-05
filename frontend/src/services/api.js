@@ -39,7 +39,8 @@ export const redApi = {
   tuberias: crud('/tuberias'),
   nodos:    {
     ...crud('/nodos'),
-    calcularDemandas: (data) => api.post('/nodos/calcular-demandas', data)
+    calcularDemandas: (data) => api.post('/nodos/calcular-demandas', data),
+    distribuirUsuarios: (data) => api.post('/nodos/distribuir-usuarios', data)
   },
   valvulas: crud('/valvulas'),
   tanques:  crud('/tanques'),

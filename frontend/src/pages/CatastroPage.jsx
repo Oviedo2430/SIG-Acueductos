@@ -83,6 +83,7 @@ export default function CatastroPage() {
   const [page, setPage] = useState(1)
   const [showImport, setShowImport] = useState(false)
   const [showDemandaModal, setShowDemandaModal] = useState(false)
+  const [showDistribuirModal, setShowDistribuirModal] = useState(false)
   const [editItem, setEditItem] = useState(null)
 
   // ── Cargar datos del layer activo ─────────────────────────
@@ -117,6 +118,16 @@ export default function CatastroPage() {
       qc.invalidateQueries(['catastro', 'nodos'])
     },
     onError: (err) => alert(err.response?.data?.detail || 'Error calculando demandas')
+  })
+
+  const distribuirMutation = useMutation({
+    mutationFn: (params) => api.post('/nodos/distribuir-usuarios', params),
+    onSuccess: (res) => {
+      alert(`${res.data.mensaje} Nodos afectados: ${res.data.nodos_afectados}. Usuarios asignados por nodo: ${res.data.usuarios_por_nodo}`)
+      setShowDistribuirModal(false)
+      qc.invalidateQueries(['catastro', 'nodos'])
+    },
+    onError: (err) => alert(err.response?.data?.detail || 'Error distribuyendo usuarios')
   })
 
   // ── Tabla TanStack ────────────────────────────────────────
@@ -205,9 +216,14 @@ export default function CatastroPage() {
           <span className="text-muted text-sm">{data.total} registros</span>
         )}
         {activeLayer === 'nodos' && (
-          <button className="btn btn-primary btn-sm" onClick={() => setShowDemandaModal(true)} style={{ marginLeft: 16 }}>
-            📊 Calcular Demandas
-          </button>
+          <div style={{ display: 'flex', gap: '8px', marginLeft: 16 }}>
+            <button className="btn btn-outline btn-sm" onClick={() => setShowDistribuirModal(true)}>
+              👥 Distribuir Usuarios
+            </button>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowDemandaModal(true)}>
+              📊 Calcular Demandas
+            </button>
+          </div>
         )}
         <button
           className="btn btn-ghost btn-sm"
@@ -298,6 +314,14 @@ export default function CatastroPage() {
           onClose={() => setShowDemandaModal(false)}
           onConfirm={(params) => demandaMutation.mutate(params)}
           isLoading={demandaMutation.isPending}
+        />
+      )}
+      
+      {showDistribuirModal && (
+        <DistribuirModal 
+          onClose={() => setShowDistribuirModal(false)}
+          onConfirm={(params) => distribuirMutation.mutate(params)}
+          isLoading={distribuirMutation.isPending}
         />
       )}
 
@@ -500,6 +524,50 @@ function DemandaModal({ onClose, onConfirm, isLoading }) {
           <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn btn-primary" onClick={() => onConfirm(params)} disabled={isLoading}>
             {isLoading ? '⟳ Calculando...' : '🚀 Calcular y Aplicar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal de Distribución de Usuarios ───────────────────────
+function DistribuirModal({ onClose, onConfirm, isLoading }) {
+  const [params, setParams] = useState({
+    total_usuarios: 686,
+    tipo_nodo: 'Conexion'
+  })
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }} onClick={onClose}>
+      <div className="card animate-fade" style={{ width: '100%', maxWidth: 450 }} onClick={e => e.stopPropagation()}>
+        <div className="card-header">
+          <div className="card-title">👥 Distribuir Usuarios</div>
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>✕</button>
+        </div>
+
+        <div style={{ marginBottom: '1rem', fontSize: '14px', color: 'var(--text-secondary)' }}>
+          Este proceso dividirá el total de usuarios especificado equitativamente entre los nodos del tipo seleccionado.
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Total de Usuarios a Distribuir</label>
+          <input type="number" className="form-control" value={params.total_usuarios} onChange={e => setParams({...params, total_usuarios: parseInt(e.target.value) || 0})} />
+        </div>
+        
+        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+          <label className="form-label">Filtrar por Tipo de Nodo</label>
+          <select className="form-control" value={params.tipo_nodo} onChange={e => setParams({...params, tipo_nodo: e.target.value})}>
+            <option value="Conexion">Solo 'Conexion'</option>
+            <option value="Todos">Todos los nodos activos</option>
+            <option value="Union">Solo 'Union'</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+          <button className="btn btn-primary" onClick={() => onConfirm(params)} disabled={isLoading}>
+            {isLoading ? '⟳ Distribuyendo...' : '🚀 Aplicar'}
           </button>
         </div>
       </div>
