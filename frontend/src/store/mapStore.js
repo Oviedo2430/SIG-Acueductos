@@ -15,6 +15,15 @@ export const useMapStore = create((set) => ({
   toggleLayer: (id) =>
     set((s) => ({ visibleLayers: { ...s.visibleLayers, [id]: !s.visibleLayers[id] } })),
 
+  // Etiquetas visibles
+  visibleLabels: { tuberias: false, nodos: false, valvulas: false, tanques: false, fuentes: false, danos: false },
+  toggleLabel: (id) =>
+    set((s) => ({ visibleLabels: { ...s.visibleLabels, [id]: !s.visibleLabels[id] } })),
+
+  // Feature seleccionado para vuelo desde catastro
+  featureToSelect: null,
+  setFeatureToSelect: (f) => set({ featureToSelect: f }),
+
   // Feature seleccionado (clic en el mapa)
   selectedFeature: null,
   setSelectedFeature: (f) => set({ selectedFeature: f }),

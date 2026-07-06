@@ -70,6 +70,9 @@ export default function MapViewer({ onFeatureClick }) {
   const draw = useRef(null)
   const popup = useRef(null)
   const visibleLayers = useMapStore((state) => state.visibleLayers)
+  const visibleLabels = useMapStore((state) => state.visibleLabels)
+  const featureToSelect = useMapStore((state) => state.featureToSelect)
+  const setFeatureToSelect = useMapStore((state) => state.setFeatureToSelect)
   const setDrawnFeature = useMapStore((state) => state.setDrawnFeature)
   const setSelectedFeature = useMapStore((state) => state.setSelectedFeature)
   const drawAction = useMapStore((state) => state.drawAction)
@@ -258,6 +261,24 @@ export default function MapViewer({ onFeatureClick }) {
         'line-opacity': .9,
       },
     })
+    
+    // Tuberías - Etiquetas
+    m.addLayer({
+      id: 'tuberias-labels',
+      type: 'symbol',
+      source: 'tuberias',
+      layout: {
+        'symbol-placement': 'line',
+        'text-field': ['get', 'codigo'],
+        'text-size': 11,
+        'visibility': 'none'
+      },
+      paint: {
+        'text-color': '#000',
+        'text-halo-color': '#fff',
+        'text-halo-width': 2
+      }
+    })
 
     // Halo de selección
     m.addLayer({
@@ -332,6 +353,27 @@ export default function MapViewer({ onFeatureClick }) {
         'circle-stroke-width': 2,
       },
     })
+
+    // Etiquetas para puntos (nodos, valvulas, tanques, fuentes, danos)
+    const pointLayers = ['nodos', 'valvulas', 'tanques', 'fuentes', 'danos'];
+    pointLayers.forEach(layer => {
+      m.addLayer({
+        id: `${layer}-labels`,
+        type: 'symbol',
+        source: layer,
+        layout: {
+          'text-field': ['get', 'codigo'],
+          'text-offset': [0, 1.2],
+          'text-size': 11,
+          'visibility': 'none'
+        },
+        paint: {
+          'text-color': '#000',
+          'text-halo-color': '#fff',
+          'text-halo-width': 2
+        }
+      });
+    });
   }
 
   const buildPopupHTML = (layerKey, props) => {
@@ -368,7 +410,7 @@ export default function MapViewer({ onFeatureClick }) {
     })
   }
 
-  // Sincronizar visibilidad de capas
+  // Sincronizar visibilidad de capas y etiquetas
   useEffect(() => {
     if (!map.current?.isStyleLoaded()) return
     const layerMap = {
@@ -382,7 +424,72 @@ export default function MapViewer({ onFeatureClick }) {
         map.current.setLayoutProperty(lid, 'visibility', visible ? 'visible' : 'none')
       }
     })
-  }, [visibleLayers])
+    
+    // Etiquetas
+    Object.entries(visibleLabels).forEach(([key, visible]) => {
+      const lid = `${key}-labels`
+      if (map.current.getLayer(lid)) {
+        map.current.setLayoutProperty(lid, 'visibility', visible ? 'visible' : 'none')
+      }
+    })
+  }, [visibleLayers, visibleLabels])
+
+  // Centrar mapa y seleccionar elemento cuando venga desde Catastro
+  useEffect(() => {
+    if (!featureToSelect || !map.current) return
+    const { layerKey, id, codigo } = featureToSelect
+
+    const focusFeature = async () => {
+      try {
+        const backendUrl = api.defaults.baseURL
+        const token = useAuthStore.getState().token
+        const res = await fetch(`${backendUrl}/${layerKey}/geojson`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        })
+        const data = await res.json()
+        const feature = data.features?.find(f => f.properties.id === id || f.properties.codigo === codigo)
+        
+        if (feature) {
+          // Obtener centro o bounding box según la geometría
+          let bounds = new maplibregl.LngLatBounds()
+          if (feature.geometry.type === 'Point') {
+            map.current.flyTo({ center: feature.geometry.coordinates, zoom: 19, duration: 2500 })
+          } else if (feature.geometry.type === 'LineString') {
+            feature.geometry.coordinates.forEach(coord => bounds.extend(coord))
+            map.current.fitBounds(bounds, { padding: 100, maxZoom: 19, duration: 2500 })
+          } else if (feature.geometry.type === 'Polygon') {
+            feature.geometry.coordinates[0].forEach(coord => bounds.extend(coord))
+            map.current.fitBounds(bounds, { padding: 100, maxZoom: 19, duration: 2500 })
+          }
+
+          // Esperar al final del vuelo y abrir popup
+          setTimeout(() => {
+            setSelectedFeature({ ...feature.properties, _layer: layerKey })
+            if (feature.geometry.type === 'Point') {
+              popup.current.setLngLat(feature.geometry.coordinates)
+                .setHTML(buildPopupHTML(layerKey, feature.properties))
+                .addTo(map.current)
+            } else if (feature.geometry.type === 'LineString') {
+              const mid = Math.floor(feature.geometry.coordinates.length / 2)
+              popup.current.setLngLat(feature.geometry.coordinates[mid])
+                .setHTML(buildPopupHTML(layerKey, feature.properties))
+                .addTo(map.current)
+            }
+          }, 2600)
+        }
+      } catch (e) {
+        console.error('Error centrando feature:', e)
+      } finally {
+        setFeatureToSelect(null)
+      }
+    }
+    
+    if (map.current.isStyleLoaded()) {
+      focusFeature()
+    } else {
+      map.current.once('load', focusFeature)
+    }
+  }, [featureToSelect])
 
   // Colorear dinámicamente según selección
   useEffect(() => {

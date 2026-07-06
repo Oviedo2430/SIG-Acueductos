@@ -12,7 +12,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Sidebar() {
-  const { visibleLayers, toggleLayer } = useMapStore()
+  const { visibleLayers, toggleLayer, visibleLabels, toggleLabel } = useMapStore()
   const user = useAuthStore(s => s.user)
   const navItems = NAV_ITEMS.filter(item => !item.roles || item.roles.includes(user?.rol))
 
@@ -38,11 +38,24 @@ export default function Sidebar() {
           Capas de Red
         </div>
         {Object.values(LAYERS).map((layer) => (
-          <div key={layer.id} className="layer-item" onClick={() => toggleLayer(layer.id)}>
+          <div key={layer.id} className="layer-item" onClick={() => toggleLayer(layer.id)} style={{ display: 'flex', alignItems: 'center' }}>
             <div className="layer-dot" style={{ background: layer.color, opacity: visibleLayers[layer.id] ? 1 : .3 }} />
-            <span className="layer-label" style={{ color: visibleLayers[layer.id] ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+            <span className="layer-label" style={{ color: visibleLayers[layer.id] ? 'var(--text-primary)' : 'var(--text-muted)', flex: 1 }}>
               {layer.icon} {layer.label}
             </span>
+            <button 
+              className="btn btn-ghost btn-sm" 
+              style={{ 
+                padding: '2px 6px', marginRight: '6px', fontSize: '11px', 
+                opacity: visibleLabels[layer.id] ? 1 : 0.4,
+                background: visibleLabels[layer.id] ? 'var(--bg-active)' : 'transparent',
+                border: `1px solid ${visibleLabels[layer.id] ? layer.color : 'transparent'}`
+              }}
+              onClick={(e) => { e.stopPropagation(); toggleLabel(layer.id) }}
+              title="Alternar etiquetas"
+            >
+              🏷️
+            </button>
             <label className="layer-toggle" onClick={e => e.stopPropagation()}>
               <input type="checkbox" checked={visibleLayers[layer.id]} onChange={() => toggleLayer(layer.id)} />
               <span className="layer-toggle-slider" />

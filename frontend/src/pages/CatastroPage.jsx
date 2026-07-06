@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useReactTable, getCoreRowModel, getSortedRowModel, getFilteredRowModel, flexRender } from '@tanstack/react-table'
 import api, { importApi } from '../services/api'
-import { LAYERS } from '../store/mapStore'
+import { LAYERS, useMapStore } from '../store/mapStore'
 
 // ── Configuración de columnas por capa ───────────────────────
 const COLUMNS_MAP = {
@@ -77,6 +78,8 @@ const LAYER_ORDER = ['tuberias', 'nodos', 'valvulas', 'tanques', 'fuentes', 'dan
 
 export default function CatastroPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  const setFeatureToSelect = useMapStore(s => s.setFeatureToSelect)
   const [activeLayer, setActiveLayer] = useState('tuberias')
   const [globalFilter, setGlobalFilter] = useState('')
   const [sorting, setSorting] = useState([])
@@ -136,9 +139,17 @@ export default function CatastroPage() {
     {
       id: 'acciones',
       header: 'Acciones',
-      size: 100,
+      size: 130,
       cell: ({ row }) => (
         <div style={{ display: 'flex', gap: 4 }}>
+          <button 
+            className="btn btn-ghost btn-sm" 
+            onClick={() => {
+              setFeatureToSelect({ layerKey: activeLayer, id: row.original.id, codigo: row.original.codigo })
+              navigate('/mapa')
+            }} 
+            title="Ver en el mapa"
+          >📍</button>
           <button className="btn btn-ghost btn-sm" onClick={() => setEditItem(row.original)} title="Editar">✏️</button>
           <button
             className="btn btn-danger btn-sm"
