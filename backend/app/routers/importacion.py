@@ -31,7 +31,13 @@ from app.models.red import Tuberia, Nodo, Valvula, Tanque, Fuente
 
 router = APIRouter(prefix="/importacion", tags=["Importación de shapefiles"])
 
-TipoLayer = Literal["tuberias", "nodos", "valvulas", "tanques", "fuentes"]
+from enum import Enum
+class TipoLayer(str, Enum):
+    tuberias = "tuberias"
+    nodos = "nodos"
+    valvulas = "valvulas"
+    tanques = "tanques"
+    fuentes = "fuentes"
 
 # ── Mapeo de campos shapefile → columnas de BD ────────────────
 FIELD_MAP = {
@@ -82,11 +88,12 @@ MODEL_MAP = {
 }
 
 @router.delete("/vaciar/{tipo_layer}", status_code=204)
-async def vaciar_capa(tipo_layer: str, db: AsyncSession = Depends(get_db)):
+async def vaciar_capa(tipo_layer: TipoLayer, db: AsyncSession = Depends(get_db)):
     """Elimina TODOS los registros de una capa específica."""
-    if tipo_layer not in MODEL_MAP:
+    layer_name = tipo_layer.value if isinstance(tipo_layer, Enum) else tipo_layer
+    if layer_name not in MODEL_MAP:
         raise HTTPException(400, "Tipo de capa no válido")
-    ModelCls = MODEL_MAP[tipo_layer]
+    ModelCls = MODEL_MAP[layer_name]
     try:
         from sqlalchemy import delete
         await db.execute(delete(ModelCls))
@@ -133,9 +140,10 @@ async def importar_shapefile(
     if not file.filename.endswith(".zip"):
         raise HTTPException(400, "El archivo debe ser un .zip con el shapefile comprimido")
 
-    field_map = FIELD_MAP[tipo_layer]
-    required  = REQUIRED_FIELDS[tipo_layer]
-    ModelCls  = MODEL_MAP[tipo_layer]
+    layer_name = tipo_layer.value if isinstance(tipo_layer, Enum) else tipo_layer
+    field_map = FIELD_MAP[layer_name]
+    required  = REQUIRED_FIELDS[layer_name]
+    ModelCls  = MODEL_MAP[layer_name]
 
     # El transformador se creará dinámicamente si el CRS no es EPSG:4326
     transformer = None
@@ -228,7 +236,8 @@ async def validar_shapefile(
     if not file.filename.endswith(".zip"):
         raise HTTPException(400, "El archivo debe ser .zip")
 
-    required = REQUIRED_FIELDS[tipo_layer]
+    layer_name = tipo_layer.value if isinstance(tipo_layer, Enum) else tipo_layer
+    required = REQUIRED_FIELDS.get(layer_name, [])
     validos = 0; errores = []; campos_detectados = []
 
     with tempfile.TemporaryDirectory() as tmpdir:

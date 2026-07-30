@@ -414,7 +414,13 @@ function ImportModal({ onClose, defaultLayer }) {
       }
       setFile(null)
     } catch (e) {
-      setEstado({ tipo: 'error', msg: `❌ ${e.response?.data?.detail || 'Error al importar'}` })
+      let msg = 'Error al importar';
+      if (e.response?.data?.detail) {
+        msg = typeof e.response.data.detail === 'string' 
+          ? e.response.data.detail 
+          : JSON.stringify(e.response.data.detail);
+      }
+      setEstado({ tipo: 'error', msg: `❌ ${msg}` })
     }
   }
 

@@ -58,17 +58,11 @@ export const perdidasApi = {
 // ── Importación de shapefiles ─────────────────────────────
 export const importApi = {
   uploadShapefile: (tipo, formData) =>
-    api.post(`/importacion/shapefile/${tipo}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post(`/importacion/shapefile/${tipo}`, formData),
   uploadEpanet: (formData) =>
-    api.post('/importacion/epanet', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/importacion/epanet', formData),
   validarShapefile: (tipo, formData) =>
-    api.post(`/importacion/validar/${tipo}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post(`/importacion/validar/${tipo}`, formData),
 }
 
 // ── Autenticación ─────────────────────────────────────────
