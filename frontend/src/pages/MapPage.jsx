@@ -67,7 +67,13 @@ export default function MapPage() {
               </div>
             ))
           }
-          <button className="btn btn-outline btn-sm w-full" style={{ marginTop: 10 }}>✏️ Editar elemento</button>
+          <button 
+            className="btn btn-outline btn-sm w-full" 
+            style={{ marginTop: 10 }}
+            onClick={() => useMapStore.getState().setFeatureToEdit(selectedFeature)}
+          >
+            ✏️ Editar elemento
+          </button>
         </div>
       )}
 
@@ -100,6 +106,7 @@ export default function MapPage() {
                 {drawnFeature.geometry.type === 'Point' && (
                   <>
                     <button className="btn btn-primary btn-sm w-full" onClick={() => setCreationType('nodos')}>Crear Nodo</button>
+                    <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('fuentes')}>Crear Fuente</button>
                     <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('valvulas')}>Crear Válvula</button>
                     <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('tanques')}>Crear Tanque</button>
                     <button className="btn btn-outline btn-sm w-full" onClick={() => setCreationType('danos')} style={{ color: '#dc2626', borderColor: '#dc2626' }}>Crear Daño (Mantenimiento)</button>

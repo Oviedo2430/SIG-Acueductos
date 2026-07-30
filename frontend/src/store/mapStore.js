@@ -43,4 +43,8 @@ export const useMapStore = create((set) => ({
   // Acciones de la herramienta de dibujo (disparadas desde Sidebar)
   drawAction: null,
   triggerDrawAction: (type, value) => set({ drawAction: { type, value, timestamp: Date.now() } }),
+
+  // Edición interactiva de una geometría existente
+  featureToEdit: null,
+  setFeatureToEdit: (f) => set({ featureToEdit: f }),
 }))

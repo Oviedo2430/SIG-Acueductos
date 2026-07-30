@@ -69,24 +69,40 @@ export default function MapViewer({ onFeatureClick }) {
   const map = useRef(null)
   const draw = useRef(null)
   const popup = useRef(null)
-  const visibleLayers = useMapStore((state) => state.visibleLayers)
-  const visibleLabels = useMapStore((state) => state.visibleLabels)
-  const featureToSelect = useMapStore((state) => state.featureToSelect)
-  const setFeatureToSelect = useMapStore((state) => state.setFeatureToSelect)
-  const setDrawnFeature = useMapStore((state) => state.setDrawnFeature)
-  const setSelectedFeature = useMapStore((state) => state.setSelectedFeature)
-  const drawAction = useMapStore((state) => state.drawAction)
-  const colorBy = useMapStore((state) => state.colorBy)
+  const {
+    visibleLayers, visibleLabels,
+    featureToSelect, selectedFeature, setSelectedFeature,
+    simulationResults, colorBy,
+    setDrawnFeature, drawAction,
+    featureToEdit, setFeatureToEdit,
+  } = useMapStore()
 
-  // Escuchar acciones de dibujo desde el Sidebar
+  // Acciones desde Sidebar (ej: dibujar nuevo)
   useEffect(() => {
     if (!drawAction || !draw.current) return
-    if (drawAction.type === 'mode') {
+    if (drawAction.type === 'changeMode') {
       try { draw.current.changeMode(drawAction.value) } catch (e) { console.error('Error setting draw mode', e) }
     } else if (drawAction.type === 'trash') {
       try { draw.current.trash() } catch (e) { console.error('Error trashing feature', e) }
     }
   }, [drawAction])
+
+  // Entrar en modo edición de una feature existente
+  useEffect(() => {
+    if (!featureToEdit || !draw.current) return
+    const feature = {
+      type: 'Feature',
+      id: featureToEdit._id,
+      geometry: featureToEdit._geometry,
+      properties: featureToEdit
+    }
+    draw.current.add(feature)
+    if (feature.geometry.type === 'Point') {
+      draw.current.changeMode('simple_select', { featureIds: [feature.id] })
+    } else {
+      draw.current.changeMode('direct_select', { featureId: feature.id })
+    }
+  }, [featureToEdit])
 
   // Inicializar mapa
   useEffect(() => {
@@ -188,10 +204,38 @@ export default function MapViewer({ onFeatureClick }) {
   }, [])
 
   const addDrawHandlers = () => {
-    const updateDraw = (e) => {
+    const updateDraw = async (e) => {
       const data = draw.current.getAll()
+      const currentFeatureToEdit = useMapStore.getState().featureToEdit
+      
+      // Si estamos en modo de edición de elemento existente
+      if (currentFeatureToEdit && e.features && e.features.length > 0) {
+        const modifiedFeat = e.features[0]
+        try {
+          // Guardar nueva geometría
+          await api.put(`/${currentFeatureToEdit._layer}/${currentFeatureToEdit._id}`, { geom: modifiedFeat.geometry })
+          console.log("Geometría actualizada")
+          // Refrescar capa en DeckGL/Maplibre
+          const backendUrl = api.defaults.baseURL
+          const token = useAuthStore.getState().token
+          const res = await fetch(`${backendUrl}/${currentFeatureToEdit._layer}/geojson`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          })
+          const geojsonData = await res.json()
+          map.current.getSource(currentFeatureToEdit._layer).setData(geojsonData)
+          
+          // Limpiar estado
+          draw.current.delete(modifiedFeat.id)
+          useMapStore.getState().setFeatureToEdit(null)
+          useMapStore.getState().setSelectedFeature(null) // Cerrar popup
+        } catch (err) {
+          console.error("Error actualizando geometría", err)
+        }
+        return
+      }
+
       if (data.features.length > 0) {
-        // Enviar la última geometría dibujada/modificada al store
+        // Enviar la última geometría dibujada/modificada al store (para creación)
         setDrawnFeature(data.features[data.features.length - 1])
       } else {
         setDrawnFeature(null)
@@ -398,7 +442,7 @@ export default function MapViewer({ onFeatureClick }) {
     clickableLayers.forEach(([layerId, sourceKey]) => {
       m.on('click', layerId, (e) => {
         const feat = e.features[0]
-        setSelectedFeature({ ...feat.properties, _layer: sourceKey })
+        setSelectedFeature({ ...feat.properties, _layer: sourceKey, _geometry: feat.geometry, _id: feat.id })
         onFeatureClick?.({ ...feat.properties, _layer: sourceKey })
         popup.current
           .setLngLat(e.lngLat)
