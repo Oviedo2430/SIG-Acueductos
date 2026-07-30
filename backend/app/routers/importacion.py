@@ -82,16 +82,17 @@ MODEL_MAP = {
 }
 
 @router.delete("/vaciar/{tipo_layer}", status_code=204)
-def vaciar_capa(tipo_layer: str, db: Session = Depends(get_db)):
+async def vaciar_capa(tipo_layer: str, db: AsyncSession = Depends(get_db)):
     """Elimina TODOS los registros de una capa específica."""
     if tipo_layer not in MODEL_MAP:
         raise HTTPException(400, "Tipo de capa no válido")
     ModelCls = MODEL_MAP[tipo_layer]
     try:
-        db.query(ModelCls).delete()
-        db.commit()
+        from sqlalchemy import delete
+        await db.execute(delete(ModelCls))
+        await db.commit()
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(500, f"Error al vaciar la capa: {str(e)}")
 
 
