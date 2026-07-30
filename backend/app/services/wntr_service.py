@@ -137,8 +137,18 @@ def _build_db_model(
             start_pt = Point(line.coords[0])
             end_pt   = Point(line.coords[-1])
 
-            start_name = _nearest_node(start_pt, node_geoms)
-            end_name   = _nearest_node(end_pt,   node_geoms)
+            # Tolerancia de ~15 metros (1.5e-4 grados)
+            start_name = _nearest_node(start_pt, node_geoms, tol=1.5e-4)
+            if not start_name:
+                start_name = f"AUTO-NOD-{tub.codigo}-S"
+                wn.add_junction(start_name, base_demand=0.0, elevation=0.0, coordinates=(start_pt.x, start_pt.y))
+                node_geoms[start_name] = start_pt
+
+            end_name = _nearest_node(end_pt, node_geoms, tol=1.5e-4)
+            if not end_name:
+                end_name = f"AUTO-NOD-{tub.codigo}-E"
+                wn.add_junction(end_name, base_demand=0.0, elevation=0.0, coordinates=(end_pt.x, end_pt.y))
+                node_geoms[end_name] = end_pt
 
             if not start_name or not end_name or start_name == end_name:
                 continue
