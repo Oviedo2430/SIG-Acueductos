@@ -202,6 +202,10 @@ async def importar_shapefile(
 
                     # Crear objeto ORM
                     shapely_geom = shape(geom_raw)
+                    # Forzar 2D para evitar error de dimensión Z (Geometry has Z dimension but column does not)
+                    from shapely import wkb
+                    shapely_geom = wkb.loads(wkb.dumps(shapely_geom, output_dimension=2))
+                    
                     obj = ModelCls(
                         **mapped,
                         geom=from_shape(shapely_geom, srid=4326),
