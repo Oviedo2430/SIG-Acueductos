@@ -82,7 +82,7 @@ export default function MapViewer({ onFeatureClick }) {
     if (drawAction.type === 'mode') {
       try { draw.current.changeMode(drawAction.value) } catch (e) { console.error('Error setting draw mode', e) }
     } else if (drawAction.type === 'trash') {
-      try { draw.current.trash() } catch (e) { console.error('Error trashing feature', e) }
+      try { draw.current.deleteAll(); setDrawnFeature(null); } catch (e) { console.error('Error trashing feature', e) }
     }
   }, [drawAction])
 

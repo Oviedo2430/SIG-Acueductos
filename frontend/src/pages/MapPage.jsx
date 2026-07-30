@@ -117,6 +117,7 @@ export default function MapPage() {
                 )}
                 <button className="btn btn-ghost btn-sm w-full" style={{marginTop: 4, color: 'var(--danger)'}} onClick={() => {
                   useMapStore.getState().triggerDrawAction('trash', null)
+                  useMapStore.getState().setDrawnFeature(null)
                 }}>
                   Cancelar / Borrar
                 </button>
@@ -176,7 +177,7 @@ export default function MapPage() {
           )}
         </div>
 
-        {/* Leyenda */}
+        {/* Leyenda Dinámica */}
         <div style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 'var(--radius-md)', padding: showLegend ? '10px 14px' : '6px 14px',
@@ -190,18 +191,38 @@ export default function MapPage() {
               cursor: 'pointer', marginBottom: showLegend ? 8 : 0, gap: 12
             }}
           >
-            <div className="text-xs text-muted" style={{ fontWeight: 600 }}>Estado tuberías</div>
+            <div className="text-xs text-muted" style={{ fontWeight: 600 }}>
+              {colorBy === 'estado' || colorBy === 'none' ? 'Estado Tuberías' : 
+               colorBy === 'material' ? 'Material Tuberías' : 
+               'Presión en Nodos (mca)'}
+            </div>
             <span style={{ fontSize: 10, opacity: 0.6 }}>{showLegend ? '▼' : '▲'}</span>
           </div>
           
           {showLegend && (
             <div style={{ marginTop: 8 }}>
-              {[['Bueno','#22c55e'],['Regular','#f59e0b'],['Malo','#ef4444'],['Crítico','#dc2626']].map(([label, color]) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
-                  <div style={{ width: 24, height: 4, background: color, borderRadius: 2 }} />
-                  {label}
-                </div>
-              ))}
+              {colorBy === 'estado' || colorBy === 'none' ? (
+                [['Bueno','#22c55e'],['Regular','#f59e0b'],['Malo','#ef4444'],['Crítico','#dc2626']].map(([label, color]) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+                    <div style={{ width: 24, height: 4, background: color, borderRadius: 2 }} />
+                    {label}
+                  </div>
+                ))
+              ) : colorBy === 'material' ? (
+                [['PVC','#3b82f6'],['Asbesto C. (AC)','#8b5cf6'],['Hierro F. (HF)','#64748b'],['Polietileno (PE)','#0ea5e9']].map(([label, color]) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+                    <div style={{ width: 24, height: 4, background: color, borderRadius: 2 }} />
+                    {label}
+                  </div>
+                ))
+              ) : (
+                [['< 5 mca (Baja)','#ef4444'],['5 - 10 mca','#f97316'],['10 - 20 mca','#eab308'],['20 - 35 mca (Óptima)','#22c55e'],['> 35 mca (Alta)','#3b82f6']].map(([label, color]) => (
+                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+                    <div style={{ width: 12, height: 12, background: color, borderRadius: 6 }} />
+                    {label}
+                  </div>
+                ))
+              )}
             </div>
           )}
         </div>
