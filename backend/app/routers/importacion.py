@@ -122,8 +122,8 @@ async def importar_shapefile(
     required  = REQUIRED_FIELDS[tipo_layer]
     ModelCls  = MODEL_MAP[tipo_layer]
 
-    # Transformador de coordenadas CTM-12 → WGS84
-    transformer = Transformer.from_crs("EPSG:9377", "EPSG:4326", always_xy=True)
+    # El transformador se creará dinámicamente si el CRS no es EPSG:4326
+    transformer = None
 
     importados = 0
     errores = []
@@ -142,28 +142,38 @@ async def importar_shapefile(
 
         with fiona.open(shp_path) as src:
             # Detectar si el CRS es proyectado (metros) para aplicar transformación
-            src_crs = src.crs
-            needs_transform = True  # Siempre transformamos desde EPSG:9377
+            crs_wkt = src.crs_wkt
+            needs_transform = False
+            if crs_wkt:
+                from pyproj import CRS
+                src_crs_obj = CRS.from_wkt(crs_wkt)
+                # Si el CRS no es WGS84, creamos el transformador
+                if src_crs_obj.to_epsg() != 4326:
+                    needs_transform = True
+                    transformer = Transformer.from_crs(src_crs_obj, "EPSG:4326", always_xy=True)
 
             for i, feature in enumerate(src):
                 try:
                     props = dict(feature.get("properties") or {})
                     geom_raw = dict(feature.get("geometry") or {})
+                    
+                    # Normalizar a mayúsculas para ser insensibles a diferencias en nombres de columnas
+                    props_upper = {str(k).upper(): v for k, v in props.items() if k}
 
                     # Validar campos obligatorios
-                    missing = [f for f in required if props.get(f) is None]
+                    missing = [f for f in required if props_upper.get(f) is None]
                     if missing:
                         errores.append(f"Registro {i+1}: faltan campos {missing}")
                         continue
 
                     # Transformar coordenadas
-                    if needs_transform:
+                    if needs_transform and transformer:
                         geom_raw = _transform_geometry(geom_raw, transformer)
 
-                    # Mapear campos
+                    # Mapear campos usando las propiedades en mayúsculas
                     mapped = {}
                     for shp_field, db_field in field_map.items():
-                        val = props.get(shp_field)
+                        val = props_upper.get(shp_field)
                         if val is not None:
                             mapped[db_field] = val
 
@@ -215,13 +225,15 @@ async def validar_shapefile(
 
         with fiona.open(shp_path) as src:
             campos_detectados = list(src.schema["properties"].keys())
-            missing_required = [r for r in required if r not in campos_detectados]
+            campos_detectados_upper = [str(c).upper() for c in campos_detectados]
+            missing_required = [r for r in required if r not in campos_detectados_upper]
             if missing_required:
-                raise HTTPException(422, f"Campos obligatorios faltantes: {missing_required}")
+                raise HTTPException(422, f"Campos obligatorios faltantes en el esquema: {missing_required} (encontrados: {campos_detectados})")
 
             for i, feature in enumerate(src):
                 props = dict(feature.get("properties") or {})
-                missing = [f for f in required if props.get(f) is None]
+                props_upper = {str(k).upper(): v for k, v in props.items() if k}
+                missing = [f for f in required if props_upper.get(f) is None]
                 if missing:
                     errores.append(f"Registro {i+1}: {missing}")
                 else:
