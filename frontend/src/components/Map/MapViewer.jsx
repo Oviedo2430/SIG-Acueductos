@@ -443,7 +443,7 @@ export default function MapViewer({ onFeatureClick }) {
       m.on('click', layerId, (e) => {
         const feat = e.features[0]
         setSelectedFeature({ ...feat.properties, _layer: sourceKey, _geometry: feat.geometry, _id: feat.id })
-        onFeatureClick?.({ ...feat.properties, _layer: sourceKey })
+        onFeatureClick?.({ ...feat.properties, _layer: sourceKey, _geometry: feat.geometry, _id: feat.id })
         popup.current
           .setLngLat(e.lngLat)
           .setHTML(buildPopupHTML(sourceKey, feat.properties))
@@ -508,7 +508,7 @@ export default function MapViewer({ onFeatureClick }) {
 
           // Esperar al final del vuelo y abrir popup
           setTimeout(() => {
-            setSelectedFeature({ ...feature.properties, _layer: layerKey })
+            setSelectedFeature({ ...feature.properties, _layer: layerKey, _geometry: feature.geometry, _id: feature.id })
             if (feature.geometry.type === 'Point') {
               popup.current.setLngLat(feature.geometry.coordinates)
                 .setHTML(buildPopupHTML(layerKey, feature.properties))

@@ -59,7 +59,7 @@ export default function MapPage() {
             <button className="btn btn-ghost btn-sm" onClick={() => setSelectedFeature(null)}>✕</button>
           </div>
           {Object.entries(selectedFeature)
-            .filter(([k]) => !['_layer', 'id'].includes(k))
+            .filter(([k]) => !['_layer', 'id', '_id', '_geometry'].includes(k))
             .map(([k, v]) => (
               <div key={k} className="map-popup-row" style={{ marginBottom: 5 }}>
                 <span className="map-popup-key">{k}</span>

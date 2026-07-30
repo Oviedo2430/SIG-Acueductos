@@ -23,6 +23,11 @@ const FORMS = {
     { name: 'nombre', label: 'Nombre', type: 'text' },
     { name: 'capacidad_m3', label: 'Capacidad (m³)', type: 'number' },
   ],
+  fuentes: [
+    { name: 'codigo', label: 'Código', type: 'text', required: true },
+    { name: 'nombre', label: 'Nombre', type: 'text' },
+    { name: 'cota_piezometrica_msnm', label: 'Cota Piezométrica (msnm)', type: 'number', required: true },
+  ],
   danos: [
     { name: 'codigo', label: 'Código de reporte', type: 'text', required: true },
     { name: 'tipo_dano', label: 'Tipo de daño', type: 'select', options: ['Rotura tubo', 'Fuga en unión', 'Válvula averiada', 'Rebose tanque', 'Fraude/Conexión ilegal', 'Otro'] },
