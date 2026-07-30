@@ -565,27 +565,42 @@ export default function MapViewer({ onFeatureClick }) {
       api.get('/reportes/dashboard-stats').then(res => {
         const stats = res.data
         const presiones = stats.presiones_nodos || {}
+        const velocidades = stats.velocidades_tuberias || {}
         
-        // Expresión Mapbox Match para asignar colores a los códigos de nodos
-        const matchExpr = ['match', ['get', 'codigo']]
-        let hasData = false
+        // 1. Expresión para Nodos (Presión)
+        const matchNodes = ['match', ['to-string', ['get', 'codigo']]]
+        let hasNodeData = false
         
         Object.entries(presiones).forEach(([codigo, p]) => {
-          // Ignorar fuentes/embalses (suelen tener presión 0 por definición hidráulica)
-          if (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) {
-            return;
-          }
-          hasData = true
-          matchExpr.push(codigo)
-          // Rango de colores de presión: <5 rojo, <10 naranja, <20 amarillo, <35 verde, >=35 azul
-          matchExpr.push(p < 5 ? '#ef4444' : p < 10 ? '#f97316' : p < 20 ? '#eab308' : p < 35 ? '#22c55e' : '#3b82f6')
+          if (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) return;
+          hasNodeData = true
+          matchNodes.push(String(codigo))
+          matchNodes.push(p < 5 ? '#ef4444' : p < 10 ? '#f97316' : p < 20 ? '#eab308' : p < 35 ? '#22c55e' : '#3b82f6')
         })
+        matchNodes.push(LAYERS.nodos.color)
         
-        matchExpr.push(LAYERS.nodos.color) // Color por defecto (gris) si no tiene presión
-        
-        if (hasData) {
-          map.current.setPaintProperty('nodos-layer', 'circle-color', matchExpr)
+        if (hasNodeData) {
+          map.current.setPaintProperty('nodos-layer', 'circle-color', matchNodes)
         }
+
+        // 2. Expresión para Tuberías (Velocidad)
+        const matchPipes = ['match', ['to-string', ['get', 'codigo']]]
+        let hasPipeData = false
+
+        Object.entries(velocidades).forEach(([codigo, v]) => {
+          hasPipeData = true
+          matchPipes.push(String(codigo))
+          matchPipes.push(v < 0.6 ? '#f97316' : v <= 1.5 ? '#22c55e' : '#ef4444')
+        })
+        matchPipes.push(LAYERS.tuberias.color) // Color default
+
+        if (hasPipeData) {
+          map.current.setPaintProperty('tuberias-layer', 'line-color', matchPipes)
+        } else {
+          // Si no hay datos, resetear
+          map.current.setPaintProperty('tuberias-layer', 'line-color', LAYERS.tuberias.color)
+        }
+
       }).catch(err => console.error("Error cargando presiones para el mapa:", err))
     }
   }, [colorBy])

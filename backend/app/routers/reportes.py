@@ -51,6 +51,9 @@ DEMO_STATS = {
         "NOD-001": 28.5, "NOD-002": 24.3, "NOD-003": 19.8,
         "NOD-004": 22.1, "NOD-005": 17.4, "NOD-006": 14.2,
     },
+    "velocidades_tuberias": {
+        "TUB-001": 1.2, "TUB-002": 0.8, "TUB-003": 1.5,
+    },
     "usuarios": {
         "total_usuarios": 1520,
         "demanda_total_lps": 12.5,
@@ -129,8 +132,13 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
                 k: v.get("presion_mca", 0)
                 for k, v in ultima_sim.resultados_nodos.items()
             }
-
-    # ── Historial de simulaciones ────────────────────────────
+        
+        velocidades_tuberias = {}
+        if ultima_sim.resultados_tuberias:
+            velocidades_tuberias = {
+                k: v.get("velocidad_ms", 0)
+                for k, v in ultima_sim.resultados_tuberias.items()
+            }
     hist_res = await db.execute(
         select(Simulacion).where(Simulacion.estado == "completada")
         .order_by(Simulacion.fecha_creacion).limit(20)
@@ -176,6 +184,7 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
         "ultima_simulacion": ultima_sim_data,
         "historial_simulaciones": historial,
         "presiones_nodos": presiones_nodos,
+        "velocidades_tuberias": velocidades_tuberias,
         "usuarios": {
             "total_usuarios": total_usuarios,
             "demanda_total_lps": round(demanda_total_lps, 2),

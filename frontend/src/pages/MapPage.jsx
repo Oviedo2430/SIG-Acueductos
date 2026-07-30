@@ -194,7 +194,7 @@ export default function MapPage() {
             <div className="text-xs text-muted" style={{ fontWeight: 600 }}>
               {colorBy === 'estado' || colorBy === 'none' ? 'Estado Tuberías' : 
                colorBy === 'material' ? 'Material Tuberías' : 
-               'Presión en Nodos (mca)'}
+               'Resultados (Simulación)'}
             </div>
             <span style={{ fontSize: 10, opacity: 0.6 }}>{showLegend ? '▼' : '▲'}</span>
           </div>
@@ -216,12 +216,22 @@ export default function MapPage() {
                   </div>
                 ))
               ) : (
-                [['< 5 mca (Baja)','#ef4444'],['5 - 10 mca','#f97316'],['10 - 20 mca','#eab308'],['20 - 35 mca (Óptima)','#22c55e'],['> 35 mca (Alta)','#3b82f6']].map(([label, color]) => (
-                  <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
-                    <div style={{ width: 12, height: 12, background: color, borderRadius: 6 }} />
-                    {label}
-                  </div>
-                ))
+                <>
+                  <div style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: 'var(--text)'}}>Presión Nodos (mca)</div>
+                  [['< 5 (Baja)','#ef4444'],['5 - 10','#f97316'],['10 - 20','#eab308'],['20 - 35 (Óptima)','#22c55e'],['> 35 (Alta)','#3b82f6']].map(([label, color]) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+                      <div style={{ width: 12, height: 12, background: color, borderRadius: 6, flexShrink: 0 }} />
+                      {label}
+                    </div>
+                  ))
+                  <div style={{fontSize: 11, fontWeight: 'bold', marginTop: 8, marginBottom: 4, color: 'var(--text)'}}>Velocidad Tuberías (m/s)</div>
+                  [['< 0.6 (Baja)','#f97316'],['0.6 - 1.5 (Óptima)','#22c55e'],['> 1.5 (Alta)','#ef4444']].map(([label, color]) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
+                      <div style={{ width: 24, height: 4, background: color, borderRadius: 2, flexShrink: 0 }} />
+                      {label}
+                    </div>
+                  ))
+                </>
               )}
             </div>
           )}
