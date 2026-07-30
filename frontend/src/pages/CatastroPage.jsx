@@ -113,6 +113,15 @@ export default function CatastroPage() {
     onSuccess: () => qc.invalidateQueries(['catastro', activeLayer]),
   })
 
+  const deleteLayerMutation = useMutation({
+    mutationFn: (layer) => api.delete(`/importacion/vaciar/${layer}`),
+    onSuccess: () => {
+      qc.invalidateQueries(['catastro', activeLayer])
+      alert('Capa vaciada exitosamente')
+    },
+    onError: (err) => alert(err.response?.data?.detail || 'Error al vaciar la capa')
+  })
+
   const demandaMutation = useMutation({
     mutationFn: (params) => api.post('/nodos/calcular-demandas', params),
     onSuccess: (res) => {
@@ -236,18 +245,30 @@ export default function CatastroPage() {
             </button>
           </div>
         )}
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={() => api.get(`/${activeLayer}/exportar`, { params: { formato: 'excel' }, responseType: 'blob' })
-            .then(r => {
-              const url = URL.createObjectURL(r.data)
-              Object.assign(document.createElement('a'), { href: url, download: `${activeLayer}.xlsx` }).click()
-            }).catch(() => alert('Exportación no disponible aún'))
-          }
-          style={{ marginLeft: 'auto' }}
-        >
-          📥 Exportar Excel
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => api.get(`/${activeLayer}/exportar`, { params: { formato: 'excel' }, responseType: 'blob' })
+              .then(r => {
+                const url = URL.createObjectURL(r.data)
+                Object.assign(document.createElement('a'), { href: url, download: `${activeLayer}.xlsx` }).click()
+              }).catch(() => alert('Exportación no disponible aún'))
+            }
+          >
+            📥 Exportar Excel
+          </button>
+          <button
+            className="btn btn-danger btn-sm"
+            onClick={() => {
+              if (window.confirm(`¿Estás seguro de que quieres vaciar TODOS los registros de la capa "${LAYERS[activeLayer]?.label}"? Esta acción no se puede deshacer.`)) {
+                deleteLayerMutation.mutate(activeLayer)
+              }
+            }}
+            disabled={deleteLayerMutation.isPending}
+          >
+            {deleteLayerMutation.isPending ? '🗑 Vaciando...' : '🗑 Vaciar Capa'}
+          </button>
+        </div>
       </div>
 
       {/* Tabla */}
