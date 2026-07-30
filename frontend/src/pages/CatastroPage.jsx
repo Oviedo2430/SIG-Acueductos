@@ -373,8 +373,8 @@ export default function CatastroPage() {
 
 
 // ── Modal de importación ──────────────────────────────────────
-function ImportModal({ onClose, defaultLayer }) {
-  const [tipo, setTipo] = useState(defaultLayer)
+function ImportModal({ onClose, layer, onSuccess }) {
+  const [tipo, setTipo] = useState(layer || 'tuberias')
   const [file, setFile] = useState(null)
   const [dragOver, setDragOver] = useState(false)
   const [estado, setEstado] = useState(null)
