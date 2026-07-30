@@ -212,8 +212,11 @@ async def importar_shapefile(
 
                 except Exception as e:
                     errores.append(f"Registro {i+1}: {str(e)}")
-
-        await db.commit()
+        try:
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            raise HTTPException(400, f"Error al guardar en base de datos. Asegúrate de haber vaciado la capa antes de importar. Detalle: {str(e)}")
 
     return {
         "message": f"Importación completada para '{tipo_layer}'",
