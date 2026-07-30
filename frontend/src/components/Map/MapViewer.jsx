@@ -577,7 +577,7 @@ export default function MapViewer({ onFeatureClick }) {
           matchNodes.push(String(codigo))
           matchNodes.push(p < 5 ? '#ef4444' : p < 10 ? '#f97316' : p < 20 ? '#eab308' : p < 35 ? '#22c55e' : '#3b82f6')
         })
-        matchNodes.push(LAYERS.nodos.color)
+        matchNodes.push('#94a3b8') // Color gris si no tiene presión (Sin Datos)
         
         if (hasNodeData) {
           map.current.setPaintProperty('nodos-layer', 'circle-color', matchNodes)
@@ -592,13 +592,13 @@ export default function MapViewer({ onFeatureClick }) {
           matchPipes.push(String(codigo))
           matchPipes.push(v < 0.6 ? '#f97316' : v <= 1.5 ? '#22c55e' : '#ef4444')
         })
-        matchPipes.push(LAYERS.tuberias.color) // Color default
+        matchPipes.push('#94a3b8') // Color gris si no tiene velocidad (Sin Datos)
 
         if (hasPipeData) {
           map.current.setPaintProperty('tuberias-layer', 'line-color', matchPipes)
         } else {
-          // Si no hay datos, resetear
-          map.current.setPaintProperty('tuberias-layer', 'line-color', LAYERS.tuberias.color)
+          // Si no hay datos, resetear a gris completo
+          map.current.setPaintProperty('tuberias-layer', 'line-color', '#94a3b8')
         }
 
       }).catch(err => console.error("Error cargando presiones para el mapa:", err))
