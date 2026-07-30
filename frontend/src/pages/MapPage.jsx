@@ -218,19 +218,19 @@ export default function MapPage() {
               ) : (
                 <>
                   <div style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: 'var(--text)'}}>Presión Nodos (mca)</div>
-                  [['< 5 (Baja)','#ef4444'],['5 - 10','#f97316'],['10 - 20','#eab308'],['20 - 35 (Óptima)','#22c55e'],['> 35 (Alta)','#3b82f6']].map(([label, color]) => (
+                  {[['< 5 (Baja)','#ef4444'],['5 - 10','#f97316'],['10 - 20','#eab308'],['20 - 35 (Óptima)','#22c55e'],['> 35 (Alta)','#3b82f6']].map(([label, color]) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
                       <div style={{ width: 12, height: 12, background: color, borderRadius: 6, flexShrink: 0 }} />
                       {label}
                     </div>
-                  ))
+                  ))}
                   <div style={{fontSize: 11, fontWeight: 'bold', marginTop: 8, marginBottom: 4, color: 'var(--text)'}}>Velocidad Tuberías (m/s)</div>
-                  [['< 0.6 (Baja)','#f97316'],['0.6 - 1.5 (Óptima)','#22c55e'],['> 1.5 (Alta)','#ef4444']].map(([label, color]) => (
+                  {[['< 0.6 (Baja)','#f97316'],['0.6 - 1.5 (Óptima)','#22c55e'],['> 1.5 (Alta)','#ef4444']].map(([label, color]) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
                       <div style={{ width: 24, height: 4, background: color, borderRadius: 2, flexShrink: 0 }} />
                       {label}
                     </div>
-                  ))
+                  ))}
                 </>
               )}
             </div>
