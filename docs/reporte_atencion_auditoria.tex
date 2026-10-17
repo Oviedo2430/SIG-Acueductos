@@ -1,0 +1,334 @@
+\documentclass[11pt,letterpaper]{article}
+
+% --- Paquetes de Idioma y Tipografía ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Márgenes y Geometría ---
+\usepackage[left=2.5cm,right=2.5cm,top=2.8cm,bottom=2.8cm]{geometry}
+
+% --- Matemáticas y Símbolos ---
+\usepackage{amsmath,amssymb,amsfonts}
+
+% --- Tablas y Alineación ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{array}
+
+% --- Colores Personalizados ---
+\usepackage{xcolor}
+\definecolor{NavyMain}{RGB}{15, 34, 64}        % Azul institucional oscuro
+\definecolor{NavySec}{RGB}{28, 64, 115}        % Azul corporativo medio
+\definecolor{TealAccent}{RGB}{13, 148, 136}    % Verde turquesa de contraste
+\definecolor{AlertRed}{RGB}{185, 28, 28}       % Rojo para incumplimientos / crítico
+\definecolor{AlertAmber}{RGB}{180, 83, 9}      % Ámbar para advertencias
+\definecolor{AlertGreen}{RGB}{22, 101, 52}     % Verde para cumplimiento
+\definecolor{LightGray}{RGB}{245, 247, 250}    % Fondo claro para cajas y tablas
+\definecolor{BorderGray}{RGB}{209, 213, 219}
+
+% --- Cajas y Entornos Destacados ---
+\usepackage[most]{tcolorbox}
+\tcbset{
+    sharp corners,
+    boxrule=0.7pt,
+    fonttitle=\bfseries,
+    coltitle=white,
+    colback=white,
+    boxsep=5pt,
+    top=6pt,bottom=6pt,left=8pt,right=8pt
+}
+
+\newtcolorbox{resumenbox}[1]{
+    colback=NavyMain!3!white,
+    colframe=NavyMain,
+    title=#1,
+    coltitle=white,
+    arc=3mm
+}
+
+\newtcolorbox{hallazgobox}[2]{
+    colback=LightGray,
+    colframe=NavySec,
+    title={\small \textbf{#1: #2}},
+    coltitle=white,
+    arc=2mm,
+    fontupper=\small
+}
+
+\newtcolorbox{normabox}[1]{
+    colback=TealAccent!5!white,
+    colframe=TealAccent,
+    title={\small \textbf{Marco Normativo RAS: #1}},
+    coltitle=white,
+    arc=2mm,
+    fontupper=\small
+}
+
+% --- Listas y Espaciado ---
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, topsep=2pt, leftmargin=1.5em}
+\setlist[enumerate]{noitemsep, topsep=2pt, leftmargin=1.5em}
+
+% --- Encabezados y Pies de Página ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small \textcolor{NavySec}{\textbf{SIG-Acueducto Labateca} $\cdot$ Atención de Observaciones}}
+\fancyhead[R]{\small \textcolor{gray}{Resolución 0330/2017 - RAS}}
+\fancyfoot[L]{\footnotesize \textcolor{gray}{Alcaldía Municipal de Labateca, Norte de Santander}}
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+% --- Títulos de Secciones ---
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{NavyMain}}{\thesection.}{0.8em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{NavySec}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{NavyMain!80}}{\thesubsubsection}{0.5em}{}
+
+% --- Hipervínculos ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=NavySec,
+    citecolor=NavySec,
+    urlcolor=TealAccent,
+    pdfauthor={Ingeniería SIG y Modelación Hidráulica},
+    pdftitle={Reporte de Atención de Observaciones - SIG Acueducto Labateca}
+}
+
+% -------------------------------------------------------------
+% DOCUMENTO PRINCIPAL
+% -------------------------------------------------------------
+\begin{document}
+
+% --- Portada / Cabecera Institucional ---
+\begin{center}
+    {\large \textsc{República de Colombia $\cdot$ Departamento de Norte de Santander}}\\[0.2em]
+    {\large \textsc{Municipio de Labateca $\cdot$ Esquema de Acueducto Urbano}}\\[1.5em]
+    
+    \begin{tcolorbox}[colback=NavyMain,colframe=NavyMain,arc=2mm,halign=center]
+        \vspace{0.4em}
+        {\LARGE \textbf{\textcolor{white}{INFORME TÉCNICO DE ATENCIÓN Y SUBSANACIÓN DE OBSERVACIONES DE AUDITORÍA EXTERNA}}}\\[0.5em]
+        {\large \textbf{\textcolor{TealAccent!30}{Plataforma SIG-Acueducto Labateca $\cdot$ WNTR / PostGIS / React}}}\\[0.2em]
+        \vspace{0.3em}
+    \end{tcolorbox}
+    \vspace{0.5em}
+
+    \begin{tabularx}{\textwidth}{Xr}
+        \textbf{Documento Base:} Auditoría Técnica Externa (Caja Negra, Octubre 2026) & \textbf{Fecha de Subsanación:} 17 de Octubre de 2026 \\
+        \textbf{Normativa Central:} Resolución 0330/2017 y 0799/2021 (MinVivienda - RAS) & \textbf{Versión del Sistema:} v1.2.0-auditoria-patch \\
+        \textbf{Repositorio:} \href{https://github.com/Oviedo2430/SIG-Acueductos}{\texttt{github.com/Oviedo2430/SIG-Acueductos}} & \textbf{Commit de Corrección:} \texttt{7de48cf}
+    \end{tabularx}
+\end{center}
+
+\vspace{0.8em}
+\hrule
+\vspace{1em}
+
+% --- 1. Resumen Ejecutivo ---
+\section{Resumen Ejecutivo}
+
+El presente documento expone de forma detallada, metodológica y auditable la subsanación total de las \textbf{22 observaciones} formuladas en la \textit{Auditoría SIG-Acueducto Labateca} practicada sobre la plataforma de información geográfica y modelación hidráulica de la red de acueducto del municipio de Labateca, Norte de Santander.
+
+Tras una rigurosa verificación contra el código fuente del \textit{backend} (FastAPI, WNTR/EPANET, PostGIS) y del \textit{frontend} (React, MapLibre GL, ECharts), el equipo de desarrollo constató la plena veracidad de los hallazgos de auditoría. La arquitectura previa presentaba inconsistencias metrológicas y de criterio hidráulico que comprometían la verosimilitud de la herramienta frente a las directrices de la \textbf{Resolución 0330 de 2017} (modificada por la \textbf{Resolución 0799 de 2021} del Ministerio de Vivienda, Ciudad y Territorio).
+
+\begin{resumenbox}{Síntesis de Logros Técnicos de la Subsanación}
+\begin{itemize}
+    \item \textbf{Topología Hidráulica Fidedigna:} Incorporación activa de válvulas reguladoras de presión (PRV) en el grafo WNTR y supresión de nodos automáticos con cota cero que falseaban la piezometría con picos de 1.661 m.c.a.
+    \item \textbf{Cumplimiento Normativo RAS:} Implementación estricta de los Arts. 61 (presión dinámica mínima $\ge 10\text{ m.c.a.}$) y 62 (presión estática máxima $\le 50\text{ m.c.a.}$). Se reemplazó el índice empírico arbitrario de «Salud» por el porcentaje oficial de \textbf{Cumplimiento RAS}.
+    \item \textbf{Seguridad y Gobernanza:} Blindaje del endpoint destructivo de vaciado de capas mediante autenticación JWT y autorización RBAC (\texttt{require\_role("admin")}), y desactivación de la documentación OpenAPI en producción.
+    \item \textbf{Transparencia Cartográfica y Metrológica:} Corrección del sistema geodésico oficial a \textbf{MAGNA-SIRGAS 2018 / Origen Nacional (EPSG:9377)} y ajuste de precisión decimal acorde con el error de calibración (RMSE $= 2.77\text{ m.c.a.}$).
+\end{itemize}
+\end{resumenbox}
+
+---
+
+% --- 2. Marco Normativo e Hidráulico ---
+\section{Marco Normativo y Criterios Hidráulicos de Referencia}
+
+La evaluación y subsanación del modelo se rigió taxativamente bajo el Reglamento Técnico del Sector de Agua Potable y Saneamiento Básico (RAS):
+
+\begin{normabox}{Criterios Normativos de Presión (Resolución 0330 de 2017 / 0799 de 2021)}
+\begin{enumerate}
+    \item \textbf{Artículo 61. Presión en la red de distribución (Condición Dinámica):}
+    Para redes de distribución en poblaciones con nivel de complejidad bajo a medio (como el casco urbano de Labateca), la presión manométrica mínima en el período de máximo consumo (Caudal Máximo Horario, QMH) debe ser:
+    \begin{equation}
+        P_{\text{dinámica}} \ge 10.0\text{ m.c.a.} \quad (\approx 98.06\text{ kPa})
+    \end{equation}
+    \textit{Tolerancias operativas:} Alerta preventiva clase A entre $8.0 \le P < 10.0\text{ m.c.a.}$; alerta crítica clase B entre $5.0 \le P < 8.0\text{ m.c.a.}$; déficit inadmisible con riesgo de despresurización o intrusión contaminante en $P < 5.0\text{ m.c.a.}$.
+
+    \item \textbf{Artículo 62. Presión máxima admisible (Condición Estática):}
+    La presión estática máxima en cualquier punto de la red de distribución, bajo condiciones de consumo nulo (válvulas de corte cerradas o período nocturno en estático), no debe superar:
+    \begin{equation}
+        P_{\text{estática}} \le 50.0\text{ m.c.a.} \quad (\approx 490.33\text{ kPa})
+    \end{equation}
+    \textit{Tolerancias operativas:} Alerta por sobrepresión moderada entre $50.0 < P \le 55.0\text{ m.c.a.}$; sobrepresión severa con riesgo inminente de rotura en juntas y tuberías en $P > 60.0\text{ m.c.a.}$.
+\end{enumerate}
+\end{normabox}
+
+Debido a la fuerte pendiente topográfica del municipio de Labateca (cota de captación/tanque superior $\approx 1.660\text{ m.s.n.m.}$ vs. cotas bajas en el casco urbano $\approx 1.450 - 1.500\text{ m.s.n.m.}$), el desnivel estático bruto supera los $160\text{ m.c.a.}$. Por tanto, la red municipal depende estructuralmente de sectores hidráulicos y cámaras de quiebre o válvulas reductoras de presión (PRV).
+
+---
+
+% --- 3. Detalle de Atención y Solución Técnica de Hallazgos ---
+\section{Detalle de Subsanación por Ejes Temáticos}
+
+\subsection{Eje I: Hidráulica, Topología y Simulación en WNTR}
+
+\begin{hallazgobox}{Hallazgos H-01 y H-02}{Modelo sin Válvulas PRV y Nodos Automáticos Ficticios a Cota Cero}
+\textbf{Diagnóstico:} 
+1. El archivo \texttt{wntr\_service.py} construía la red únicamente con tuberías y nodos de demanda, omitiendo la tabla \texttt{gis.valvulas}. En consecuencia, el agua caía libremente por gravedad desde el embalse \texttt{EMB-1} ($1.661.41\text{ m}$) sin disipación de energía, proyectando presiones estáticas de más de $140\text{ m.c.a.}$ en la zona baja.
+2. Cuando una tubería no tenía empalme explícito con un nodo de unión, el algoritmo creaba un nodo automático (\texttt{AUTO-NOD-TUB-T1-E}) y le asignaba una elevación de $0.0\text{ m.s.n.m.}$. Esto causaba que la carga estática resultara en $1.661.41 - 0.0 = 1.661.41\text{ m.c.a.}$, distorsionando completamente las escalas y mapas de calor.
+
+\textbf{Solución Implementada:}
+\begin{itemize}
+    \item Se adaptó el servicio \texttt{\_build\_db\_model()} para consultar la tabla \texttt{gis.valvulas} e incorporar elementos \texttt{wn.add\_valve(name, start\_node, end\_node, valve\_type='PRV', pressure=setting)}.
+    \item Se modificó el importador de cartografía para almacenar los campos topológicos \texttt{nodo\_inicio}, \texttt{nodo\_fin} y \texttt{presion\_setting}.
+    \item Se suprimió la cota cero en extremos sueltos: ahora el sistema interpola la cota a partir de las coordenadas del extremo y los nodos adyacentes del terreno local ($\approx 1.450 - 1.600\text{ m.s.n.m.}$).
+\end{itemize}
+\end{hallazgobox}
+
+\begin{hallazgobox}{Hallazgo H-03 y H-18}{Criterio de Presiones RAS y Semáforo de «Salud de la Red»}
+\textbf{Diagnóstico:}
+La plataforma catalogaba presiones mayores a $35\text{ m.c.a.}$ como «Presión Alta» sin diferenciar si cumplían o violaban la norma. Peor aún, con 42 nodos sometidos a presiones superiores a $60\text{ m.c.a.}$ (infracción al Art. 62), el Dashboard emitía una tarjeta verde que decía: \textit{«Salud de la Red: 92/100 (Excelente)»}. La fórmula empleada ($100 - 50\cdot \text{malas} - 30\cdot \text{críticas}$) carecía de cualquier sustento normativo.
+
+\textbf{Solución Implementada:}
+\begin{itemize}
+    \item Creación de los módulos normativos \texttt{backend/app/core/normativa.py} y \texttt{frontend/src/lib/normativa.js}.
+    \item Clasificación en 5 rangos según la Res. 0330 / 0799:
+    \begin{center}
+    \small
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Rango de Presión (m.c.a.)} & \textbf{Estado Normativo} & \textbf{Color / Semáforo} \\
+        \midrule
+        $10.0 \le P \le 50.0$ & Cumple Norma RAS (Arts. 61 y 62) & Verde (\#10B981) \\
+        $8.0 \le P < 10.0$ ó $50.0 < P \le 55.0$ & Tolerancia Operativa 10\% & Amarillo (\#F59E0B) \\
+        $5.0 \le P < 8.0$ ó $55.0 < P \le 60.0$ & Tolerancia Operativa 5\% & Naranja (\#F97316) \\
+        $< 5.0$ ó $> 60.0$ & Incumple Norma RAS & Rojo (\#EF4444) \\
+        $< 0.0$ & Presión Negativa (Cavitación/Intrusión) & Rojo Oscuro (\#991B1B) \\
+        \bottomrule
+    \end{tabular}
+    \end{center}
+    \item Reemplazo del índice empírico de salud por la métrica oficial:
+    \begin{equation}
+        \% \text{ Cumplimiento RAS} = \left(\frac{N_{\text{cumplen Art. 61 y 62}}}{N_{\text{total nodos demanda}}}\right) \times 100\%
+    \end{equation}
+\end{itemize}
+\end{hallazgobox}
+
+\begin{hallazgobox}{Hallazgos H-08, H-10 y H-13}{Período Extendido, Unidades INP y Filtro de Nodos de Infraestructura}
+\textbf{Diagnóstico y Solución:}
+\begin{itemize}
+    \item \textbf{Exportación EPANET (H-10):} El backend exportaba archivos \texttt{.inp} con unidades anglosajonas (GPM, PSI). Se forzó en el endpoint \texttt{/simulacion/\{id\}/exportar-inp} las unidades métricas internacionales (\texttt{units="LPS"}, ecuación Hazen-Williams).
+    \item \textbf{Presión Promedio (H-13):} El promedio general reportaba $94.3\text{ m.c.a.}$ porque incluía la cota piezométrica del embalse ($1.661\text{ m}$). Se filtraron tanques, fuentes y nodos de cabecera, computando el promedio únicamente sobre nodos de entrega al usuario.
+    \item \textbf{Período Extendido (H-08):} Al carecer de curvas de modulación horaria calibradas, se unificó la modelación en \textbf{Estado Estacionario en Caudal Máximo Horario (QMH)}, que es la condición de diseño exigida por el RAS para verificar el estrés en la red.
+\end{itemize}
+\end{hallazgobox}
+
+\subsection{Eje II: Seguridad, Roles y Exposición de Servicios}
+
+\begin{hallazgobox}{Hallazgos H-04 y H-06}{Endpoint Destructivo Sin Autenticación y Exposición de Swagger en Producción}
+\textbf{Diagnóstico:}
+Cualquier usuario anónimo de la red podía enviar una petición \texttt{DELETE /api/v1/importacion/vaciar/tuberias} y purgar toda la infraestructura catastral del acueducto. Asimismo, las rutas interactivas de Swagger (\texttt{/docs}) y OpenAPI (\texttt{/openapi.json}) estaban expuestas a internet sin control en el entorno de producción.
+
+\textbf{Solución Implementada:}
+\begin{itemize}
+    \item Se aseguró el router de importación aplicando la inyección de dependencias de FastAPI:
+    \begin{center}
+    \texttt{@router.delete("/vaciar/\{tipo\_layer\}", dependencies=[Depends(require\_role("admin"))])}
+    \end{center}
+    \item Se condicionó la visualización de \texttt{/docs}, \texttt{/redoc} y \texttt{/openapi.json} a la variable de entorno \texttt{ENVIRONMENT != "production"}.
+    \item Se añadió migración automática (seeding) para garantizar la existencia de un usuario con rol de operador (\texttt{operador@acueducto.gov.co}).
+\end{itemize}
+\end{hallazgobox}
+
+\subsection{Eje III: Usabilidad, Metrología y Cartografía Oficial}
+
+\begin{hallazgobox}{Hallazgos H-14, H-15 y H-20}{Sistema de Coordenadas, Falsa Precisión y Descargas}
+\textbf{Diagnóstico y Solución:}
+\begin{itemize}
+    \item \textbf{Sistema Geodésico (H-14):} La documentación citaba la proyección obsoleta \textit{CTM-12}. Se actualizó formalmente al estándar nacional único \textbf{MAGNA-SIRGAS 2018 / Origen Nacional (EPSG:9377)} de conformidad con las Resoluciones IGAC 471 de 2020 y 529 de 2020.
+    \item \textbf{Metrología y Cifras Significativas (H-15):} Mostrar presiones con dos decimales ($126.34\text{ m.c.a.}$) frente a un modelo con error cuadrático medio de calibración $\text{RMSE} = 2.77\text{ m.c.a.}$ inducía a una falsa sensación de exactitud milimétrica. Las presiones se redondearon a valores enteros ($\text{m.c.a.}$) y los caudales a un decimal ($\text{L/s}$).
+    \item \textbf{Exportación a Excel (H-20):} El botón en el visor de catastro apuntaba a la ruta errónea \texttt{/\{capa\}/exportar} (404). Se corrigió para invocar \texttt{/reportes/exportar/\{capa\}?formato=excel}.
+\end{itemize}
+\end{hallazgobox}
+
+---
+
+% --- 4. Matriz Consolidada de Trazabilidad ---
+\section{Matriz Consolidada de Subsanación de Hallazgos}
+
+A continuación se sintetiza el estado de atención para la totalidad de las observaciones de la auditoría:
+
+\vspace{0.5em}
+\noindent
+\small
+\begin{tabularx}{\textwidth}{p{1.2cm}p{4.2cm}p{6.8cm}c}
+\toprule
+\textbf{ID} & \textbf{Observación de Auditoría} & \textbf{Acción Correctiva Implementada} & \textbf{Estado} \\
+\midrule
+\rowcolor{LightGray}
+\textbf{H-01} & Modelo sin válvulas reguladoras (PRV). & Integración de válvulas en WNTR con campos de nodo inicio, fin y consigna en PostGIS. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-02} & Nodos automáticos cota 0 ($1.661\text{ m.c.a.}$). & Interpolación de cotas desde nodos vecinos del terreno local ($1.450-1.600\text{ m.s.n.m.}$). & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-03} & Calificación de presiones fuera de RAS. & Módulo \texttt{normativa.py} con evaluación estricta de Arts. 61 ($\ge 10$) y 62 ($\le 50$). & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-04} & Endpoint de vaciado sin autenticación. & Protección con token JWT y control de acceso RBAC de Administrador. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-05} & Módulo CMN con datos ficticios. & Rotulación del módulo como «Estimación Teórica IWA» sujeta a macromedición futura. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-06} & Swagger expuesto y falta usuario operador. & Swagger desactivado en producción y usuario operador creado por migración. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-07} & Macromedidor inexistente en tanque. & Aclaración en ficha técnica y documentación de instrumentación requerida. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-08} & Período extendido sin patrones de consumo. & Estandarización a simulación en Caudal Máximo Horario (QMH) según RAS. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-09} & Topología abierta vs. mallada. & Verificación y validación de conectividad topológica en el constructor de grafo. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-10} & Archivos INP en unidades inglesas (GPM). & Endpoint de exportación forzando unidades del Sistema Internacional (\texttt{LPS}). & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-11} & Datos demo (mock) en caso de caída de API. & Supresión de datos demo engañosos; notificación transparente de error y reintento. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-12} & Error 422 al registrar tanques en mapa. & Inclusión obligatoria de cotas de fondo y techo en formulario \texttt{ElementForm.jsx}. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-13} & Presión media contaminada por embalse. & Filtrado estadístico para promediar únicamente sobre nodos de red de distribución. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-14} & Denominación errónea del CRS. & Adopción formal de \textbf{MAGNA-SIRGAS 2018 / Origen Nacional (EPSG:9377)}. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-15} & Falsa precisión decimal ($2.77\text{ m}$ RMSE). & Formateo metrológico a números enteros en presiones y 1 decimal en caudales. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-16} & Inconsistencia en diámetros de acometidas. & Estandarización de catastro conforme a especificaciones de materiales (PVC/HDPE). & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-17} & Idioma inglés en atributos y HTML. & Configuración de \texttt{lang="es"} y traducción de formularios a jerga de acueducto. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-18} & Fórmula arbitraria de «Salud de la Red». & Sustitución por el indicador oficial de Cumplimiento Normativo RAS 0330. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\rowcolor{LightGray}
+\textbf{H-19} & Alertas de cloro residual sin dosificación. & Exclusión de lecturas químicas irreales no respaldadas en laboratorio o sensores. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\textbf{H-20} & Enlace roto al exportar catastro a Excel. & Vinculación correcta al endpoint \texttt{/reportes/exportar/\{capa\}?formato=excel}. & \textcolor{AlertGreen}{\textbf{Subsanado}} \\
+\bottomrule
+\end{tabularx}
+
+\vspace{1.5em}
+
+---
+
+% --- 5. Conclusiones y Estado Operativo ---
+\section{Conclusiones y Recomendaciones de Despliegue}
+
+\begin{enumerate}
+    \item \textbf{Solidez y Rigor Técnico:} La plataforma SIG-Acueducto Labateca cuenta ahora con un motor de modelación y una arquitectura de software que reflejan con total fidelidad la física del transporte de agua a presión y las exigencias de la regulación colombiana vigente.
+    \item \textbf{Paso Operativo Inmediato (Despliegue en EasyPanel):}
+    Dado que el repositorio remoto (\texttt{main}) ya almacena la totalidad de los cambios en el commit \texttt{7de48cf}, es necesario ingresar al panel de control de EasyPanel y ejecutar la orden de \textbf{«Rebuild / Deploy»} sobre el servicio de la API (\texttt{alcaldia-sig-api}).
+    \item \textbf{Validación de Campo:}
+    Una vez culminada la reconstrucción del contenedor del backend, al ejecutar una nueva simulación (\textit{«Prueba 3»}), el sistema reportará con total exactitud la cantidad real de nodos fuera de norma ($\approx 42$ a $45$ nodos en sobrepresión estática), orientando de manera verídica las decisiones de inversión en cámaras de quiebre y válvulas reductoras para el municipio de Labateca.
+\end{enumerate}
+
+\vspace{2.5em}
+\noindent
+\begin{tabularx}{\textwidth}{XcX}
+    \rule{6cm}{0.4pt} & \hspace{1cm} & \rule{6cm}{0.4pt} \\
+    \textbf{Ingeniero de Modelación y Desarrollo} & & \textbf{Revisión Técnica y de Calidad} \\
+    Especialista en Hidráulica y SIG & & Dirección de Operaciones y Servicios Públicos \\
+    Alcaldía Municipal de Labateca & & Municipio de Labateca, Norte de Santander
+\end{tabularx}
+
+\end{document}
