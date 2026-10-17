@@ -17,48 +17,80 @@ settings = get_settings()
 async def lifespan(app: FastAPI):
     """
     Eventos de inicio y cierre de la aplicación.
-    - Inicio: verifica conexión a BD, crea tablas si no existen, seed inicial.
+    - Inicio: asegura esquemas, crea tablas, aplica migraciones seguras y crea usuarios iniciales.
     - Cierre: cierra el pool de conexiones.
     """
     # Startup
     print(f"🚀 Iniciando {settings.PROJECT_NAME} v{settings.PROJECT_VERSION}")
-    async with engine.begin() as conn:
-        from sqlalchemy import text
-        
-        # Verificar y corregir esquema de simulaciones si es la versión vieja de init.sql
-        res = await conn.execute(text("""
-            SELECT column_name FROM information_schema.columns 
-            WHERE table_schema='hidraulica' AND table_name='simulaciones' AND column_name='tipo'
-        """))
-        if not res.fetchone():
-            print("⚠️ Detectado esquema obsoleto de hidraulica.simulaciones. Recreando tablas...")
-            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_nodo CASCADE;"))
-            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_tuberia CASCADE;"))
-            await conn.execute(text("DROP TABLE IF EXISTS hidraulica.simulaciones CASCADE;"))
+    
+    # 1. Asegurar esquemas y tablas base
+    try:
+        async with engine.begin() as conn:
+            from sqlalchemy import text
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth;"))
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS gis;"))
+            await conn.execute(text("CREATE SCHEMA IF NOT EXISTS hidraulica;"))
             
-        # Añadir hab_por_vivienda a lecturas_macromedidor si no existe
+            # Verificar si existe el esquema viejo con columna 'tipo' (de init.sql anterior)
+            res = await conn.execute(text("""
+                SELECT column_name FROM information_schema.columns 
+                WHERE table_schema='hidraulica' AND table_name='simulaciones' AND column_name='tipo'
+            """))
+            if res.fetchone():
+                print("⚠️ Detectado esquema obsoleto de hidraulica.simulaciones con columna 'tipo'. Recreando...")
+                await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_nodo CASCADE;"))
+                await conn.execute(text("DROP TABLE IF EXISTS hidraulica.resultados_tuberia CASCADE;"))
+                await conn.execute(text("DROP TABLE IF EXISTS hidraulica.simulaciones CASCADE;"))
+
+            # Crear todas las tablas que falten según los modelos SQLAlchemy
+            from app.database import Base
+            await conn.run_sync(Base.metadata.create_all)
+            print("✅ Tablas base verificadas/creadas correctamente.")
+    except Exception as e:
+        print(f"⚠️ Advertencia inicializando esquemas base: {e}")
+
+    # 2. Migraciones incrementales de columnas (cada una en su propia transacción protegida e idempotente)
+    column_migrations = [
+        ("gis", "lecturas_macromedidor", "hab_por_vivienda", "FLOAT DEFAULT 2.87"),
+        ("gis", "valvulas", "nodo_inicio", "VARCHAR(50)"),
+        ("gis", "valvulas", "nodo_fin", "VARCHAR(50)"),
+        ("hidraulica", "simulaciones", "pct_cumplimiento_ras", "FLOAT DEFAULT 100.0"),
+        ("hidraulica", "simulaciones", "cumple_art61", "BOOLEAN DEFAULT TRUE"),
+        ("hidraulica", "simulaciones", "cumple_art62", "BOOLEAN DEFAULT TRUE"),
+    ]
+    for schema, table, col, col_def in column_migrations:
         try:
-            await conn.execute(text("ALTER TABLE gis.lecturas_macromedidor ADD COLUMN IF NOT EXISTS hab_por_vivienda FLOAT DEFAULT 2.87;"))
-            await conn.execute(text("ALTER TABLE gis.valvulas ADD COLUMN IF NOT EXISTS nodo_inicio VARCHAR(50);"))
-            await conn.execute(text("ALTER TABLE gis.valvulas ADD COLUMN IF NOT EXISTS nodo_fin VARCHAR(50);"))
-            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS pct_cumplimiento_ras FLOAT DEFAULT 100.0;"))
-            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS cumple_art61 BOOLEAN DEFAULT TRUE;"))
-            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS cumple_art62 BOOLEAN DEFAULT TRUE;"))
-        except Exception:
-            pass # Si la tabla no existe aún, se creará en el create_all
+            async with engine.begin() as conn:
+                from sqlalchemy import text
+                await conn.execute(text(f"""
+                    DO $$ 
+                    BEGIN 
+                        IF EXISTS (
+                            SELECT 1 FROM information_schema.tables 
+                            WHERE table_schema = '{schema}' AND table_name = '{table}'
+                        ) AND NOT EXISTS (
+                            SELECT 1 FROM information_schema.columns 
+                            WHERE table_schema = '{schema}' AND table_name = '{table}' AND column_name = '{col}'
+                        ) THEN 
+                            ALTER TABLE {schema}.{table} ADD COLUMN {col} {col_def}; 
+                        END IF; 
+                    END $$;
+                """))
+        except Exception as e:
+            print(f"ℹ️ Migración omitida ({schema}.{table}.{col}): {e}")
 
-            
-        # Crear tablas que falten según SQLAlchemy Models
-        from app.database import Base
-        await conn.run_sync(Base.metadata.create_all)
-        
-        await conn.execute(text("SELECT 1"))
-    print("✅ Conexión a base de datos verificada y esquema actualizado.")
+    # 3. Seed de usuarios iniciales
+    try:
+        await _seed_admin_user()
+    except Exception as e:
+        print(f"⚠️ Error en seed_admin: {e}")
 
-    # Seed de usuarios iniciales
-    await _seed_admin_user()
-    await _seed_operador_user()
+    try:
+        await _seed_operador_user()
+    except Exception as e:
+        print(f"⚠️ Error en seed_operador: {e}")
 
+    print("✅ Servidor listo para recibir peticiones.")
     yield
 
     # Shutdown
@@ -164,6 +196,7 @@ app.include_router(perdidas_router,    prefix=settings.API_V1_PREFIX)
 
 # ── Health check ────────────────────────────────
 @app.get("/health", tags=["Sistema"])
+@app.get(f"{settings.API_V1_PREFIX}/health", tags=["Sistema"])
 async def health_check():
     """Endpoint de estado del servidor (usado por EasyPanel para health checks)."""
     return {
