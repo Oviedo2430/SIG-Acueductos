@@ -2,7 +2,7 @@
 Modelo SQLAlchemy para simulaciones hidráulicas.
 Esquema: hidraulica
 """
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Boolean
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -28,13 +28,16 @@ class Simulacion(Base):
     resultados_nodos    = Column(JSON)   # {codigo: {presion_mca, cota_piez}}
     resultados_tuberias = Column(JSON)   # {codigo: {velocidad_ms, caudal_lps, perdida_m_km}}
 
-    # Estadísticas rápidas para el dashboard
-    presion_min_mca   = Column(Float)
-    presion_max_mca   = Column(Float)
-    presion_media_mca = Column(Float)
-    nodos_criticos    = Column(Integer, default=0)   # presión < 10 m.c.a
-    nodos_total       = Column(Integer, default=0)
-    tuberias_total    = Column(Integer, default=0)
+    # Estadísticas rápidas para el dashboard y cumplimiento normativo RAS (Res. 0330)
+    presion_min_mca      = Column(Float)
+    presion_max_mca      = Column(Float)
+    presion_media_mca    = Column(Float)
+    nodos_criticos       = Column(Integer, default=0)
+    nodos_total          = Column(Integer, default=0)
+    tuberias_total       = Column(Integer, default=0)
+    pct_cumplimiento_ras = Column(Float, default=100.0)
+    cumple_art61         = Column(Boolean, default=True)
+    cumple_art62         = Column(Boolean, default=True)
 
     mensaje_error = Column(String(1000))
 

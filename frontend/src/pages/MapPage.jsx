@@ -217,8 +217,15 @@ export default function MapPage() {
                 ))
               ) : (
                 <>
-                  <div style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: 'var(--text)'}}>Presión Nodos (mca)</div>
-                  {[['< 5 (Baja)','#ef4444'],['5 - 10','#f97316'],['10 - 20','#eab308'],['20 - 35 (Óptima)','#22c55e'],['> 35 (Alta)','#3b82f6'],['Sin Datos','#94a3b8']].map(([label, color]) => (
+                  <div style={{fontSize: 11, fontWeight: 'bold', marginBottom: 4, color: 'var(--text)'}}>Presión Nodos (Res. 0330)</div>
+                  {[
+                    ['10 – 50 m (Cumple RAS)', '#22c55e'],
+                    ['8–10 / 50–55 (Tolerancia 10%)', '#eab308'],
+                    ['5–8 / 55–60 (Tolerancia 5%)', '#f97316'],
+                    ['< 5 ó > 60 (Incumple)', '#ef4444'],
+                    ['< 0 m (Presión negativa)', '#7f1d1d'],
+                    ['Sin Datos', '#94a3b8']
+                  ].map(([label, color]) => (
                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
                       <div style={{ width: 12, height: 12, background: color, borderRadius: 6, flexShrink: 0 }} />
                       {label}

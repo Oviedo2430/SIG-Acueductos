@@ -39,7 +39,12 @@ async def lifespan(app: FastAPI):
         # Añadir hab_por_vivienda a lecturas_macromedidor si no existe
         try:
             await conn.execute(text("ALTER TABLE gis.lecturas_macromedidor ADD COLUMN IF NOT EXISTS hab_por_vivienda FLOAT DEFAULT 2.87;"))
-        except Exception as e:
+            await conn.execute(text("ALTER TABLE gis.valvulas ADD COLUMN IF NOT EXISTS nodo_inicio VARCHAR(50);"))
+            await conn.execute(text("ALTER TABLE gis.valvulas ADD COLUMN IF NOT EXISTS nodo_fin VARCHAR(50);"))
+            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS pct_cumplimiento_ras FLOAT DEFAULT 100.0;"))
+            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS cumple_art61 BOOLEAN DEFAULT TRUE;"))
+            await conn.execute(text("ALTER TABLE hidraulica.simulaciones ADD COLUMN IF NOT EXISTS cumple_art62 BOOLEAN DEFAULT TRUE;"))
+        except Exception:
             pass # Si la tabla no existe aún, se creará en el create_all
 
             
@@ -50,8 +55,9 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("SELECT 1"))
     print("✅ Conexión a base de datos verificada y esquema actualizado.")
 
-    # Seed del usuario admin inicial
+    # Seed de usuarios iniciales
     await _seed_admin_user()
+    await _seed_operador_user()
 
     yield
 
@@ -88,15 +94,42 @@ async def _seed_admin_user():
             print("ℹ️  Usuario admin ya existe, sin cambios.")
 
 
+async def _seed_operador_user():
+    """Crea el usuario operador inicial si no existe (H-06)."""
+    from app.database import AsyncSessionLocal
+    from app.auth.utils import get_password_hash
+    from sqlalchemy import text
+
+    async with AsyncSessionLocal() as db:
+        res = await db.execute(
+            text("SELECT id FROM auth.usuarios WHERE email = 'operador@acueducto.gov.co'")
+        )
+        if not res.fetchone():
+            hashed = get_password_hash("Operador2026")
+            await db.execute(
+                text("""
+                    INSERT INTO auth.usuarios (email, hashed_password, nombre_completo, rol, activo)
+                    VALUES ('operador@acueducto.gov.co', :pwd, 'Operador SISCATAGUA', 'operador', true)
+                    ON CONFLICT (email) DO NOTHING
+                """),
+                {"pwd": hashed}
+            )
+            await db.commit()
+            print("🔑 Usuario operador inicial configurado: operador@acueducto.gov.co")
+
+
 # ──────────────────────────────────────────────
 # Instancia de la aplicación
 # ──────────────────────────────────────────────
+is_prod = getattr(settings, "ENVIRONMENT", "").lower() == "production"
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.PROJECT_VERSION,
     description="API para el Sistema de Información Geográfica del Acueducto de Labateca",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if is_prod else "/docs",
+    redoc_url=None if is_prod else "/redoc",
+    openapi_url=None if is_prod else "/openapi.json",
     lifespan=lifespan,
 )
 
@@ -140,9 +173,17 @@ async def health_check():
     }
 
 
+@app.get(f"{settings.API_V1_PREFIX}/config/normativa", tags=["Configuración"])
+async def get_normativa_config():
+    """Retorna los parámetros oficiales de la Res. 0330/2017 y 0799/2021 (Arts. 61 y 62)."""
+    from app.core.normativa import CRITERIOS_DEFAULT
+    return CRITERIOS_DEFAULT.model_dump()
+
+
 @app.get("/", tags=["Sistema"])
 async def root():
     return {
         "message": f"Bienvenido a la API del {settings.PROJECT_NAME}",
-        "docs": "/docs",
+        "docs": None if is_prod else "/docs",
     }
+

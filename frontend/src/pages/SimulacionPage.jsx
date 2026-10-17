@@ -2,19 +2,15 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 import { useMapStore } from '../store/mapStore'
+import { CLASES_NORMATIVAS, clasificarPresionNodo, getPresionColor, fmtPresion } from '../lib/normativa'
 
-const PRESION_COLORS = [
-  { min: 0,   max: 5,   color: '#ef4444', label: '< 5 m.c.a (Crítica)' },
-  { min: 5,   max: 10,  color: '#f97316', label: '5–10 m.c.a (Baja)' },
-  { min: 10,  max: 20,  color: '#eab308', label: '10–20 m.c.a (Aceptable)' },
-  { min: 20,  max: 35,  color: '#22c55e', label: '20–35 m.c.a (Óptima)' },
-  { min: 35,  max: 999, color: '#3b82f6', label: '> 35 m.c.a (Alta)' },
+const PRESION_LEGEND = [
+  { color: CLASES_NORMATIVAS.cumple.color, label: '10–50 m.c.a (Cumple Norma RAS)' },
+  { color: CLASES_NORMATIVAS.tolerancia_10.color, label: '8–10 ó 50–55 m.c.a (Tolerancia 10%)' },
+  { color: CLASES_NORMATIVAS.tolerancia_5.color, label: '5–8 ó 55–60 m.c.a (Tolerancia 5%)' },
+  { color: CLASES_NORMATIVAS.incumple.color, label: '< 5 ó > 60 m.c.a (Incumple Norma)' },
+  { color: CLASES_NORMATIVAS.negativa.color, label: '< 0 m.c.a (Presión Negativa / Sin Servicio)' },
 ]
-
-function presionColor(p) {
-  const band = PRESION_COLORS.find(b => p >= b.min && p < b.max)
-  return band?.color || '#94a3b8'
-}
 
 const DEFAULT_CONFIG = {
   nombre: '',
@@ -227,12 +223,13 @@ export default function SimulacionPage() {
                 <div className="alert alert-danger">❌ {simActiva.mensaje_error}</div>
               )}
 
-              <div className="grid grid-4">
+              <div className="grid grid-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
                 {[
-                  { label: 'Presión mínima', value: `${simActiva.presion_min_mca ?? '—'} m.c.a`, color: presionColor(simActiva.presion_min_mca || 0) },
-                  { label: 'Presión media', value: `${simActiva.presion_media_mca ?? '—'} m.c.a`, color: presionColor(simActiva.presion_media_mca || 0) },
-                  { label: 'Presión máxima', value: `${simActiva.presion_max_mca ?? '—'} m.c.a`, color: 'var(--primary)' },
-                  { label: 'Nodos críticos', value: `${simActiva.nodos_criticos ?? 0} / ${simActiva.nodos_total ?? 0}`, color: simActiva.nodos_criticos > 0 ? 'var(--danger)' : 'var(--success)' },
+                  { label: 'Cumplimiento RAS 0330', value: `${simActiva.pct_cumplimiento_ras ?? 100}%`, color: (simActiva.pct_cumplimiento_ras ?? 100) >= 80 ? 'var(--success)' : 'var(--danger)' },
+                  { label: 'Presión mínima', value: fmtPresion(simActiva.presion_min_mca), color: getPresionColor(simActiva.presion_min_mca) },
+                  { label: 'Presión media red', value: fmtPresion(simActiva.presion_media_mca), color: getPresionColor(simActiva.presion_media_mca) },
+                  { label: 'Presión máxima', value: fmtPresion(simActiva.presion_max_mca), color: (simActiva.presion_max_mca > 50 ? 'var(--danger)' : 'var(--success)') },
+                  { label: 'Nodos fuera de norma', value: `${simActiva.nodos_criticos ?? 0} / ${simActiva.nodos_total ?? 0}`, color: simActiva.nodos_criticos > 0 ? 'var(--danger)' : 'var(--success)' },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="card" style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 22, fontWeight: 800, color }}>{value}</div>
@@ -244,8 +241,8 @@ export default function SimulacionPage() {
               {/* Leyenda de presiones */}
               <div className="card">
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Rangos de presión:</span>
-                  {PRESION_COLORS.map(b => (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)' }}>Criterios Res. 0330 / 0799:</span>
+                  {PRESION_LEGEND.map(b => (
                     <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
                       <div style={{ width: 12, height: 12, borderRadius: '50%', background: b.color }} />
                       {b.label}
@@ -276,38 +273,48 @@ export default function SimulacionPage() {
                       <thead>
                         <tr>
                           <th>Código</th>
-                          <th>Presión (m.c.a)</th>
+                          <th>Presión dinámica</th>
                           <th>Cota piez. (m)</th>
-                          <th>Estado</th>
+                          <th>Estado Normativo</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {nodosOrdenados.map(([codigo, res]) => (
-                          <tr key={codigo}>
-                            <td className="font-mono" style={{ fontSize: 12 }}>{codigo}</td>
-                            <td>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{
-                                  width: `${Math.min(100, (res.presion_mca / 50) * 100)}%`,
-                                  maxWidth: 120, height: 6, borderRadius: 3,
-                                  background: (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) ? '#ec4899' : presionColor(res.presion_mca),
-                                  minWidth: 4,
-                                }} />
-                                <span style={{ fontWeight: 600, color: (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) ? '#ec4899' : presionColor(res.presion_mca) }}>
-                                  {res.presion_mca}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="text-muted">{res.cota_piezometrica}</td>
-                            <td>
-                              {codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE') ? (
-                                <span className="badge" style={{ background: '#ec4899', color: '#fff', border: 'none' }}>Fuente</span>
-                              ) : res.presion_mca < 5 ? <span className="badge badge-danger">Crítica</span>
-                                : res.presion_mca < 10 ? <span className="badge badge-warning">Baja</span>
-                                : <span className="badge badge-success">OK</span>}
-                            </td>
-                          </tr>
-                        ))}
+                        {nodosOrdenados.map(([codigo, res]) => {
+                          const isInfra = codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE') || codigo.toUpperCase().startsWith('TAN')
+                          const claseKey = res.clase_normativa || clasificarPresionNodo(res.presion_mca, res.presion_estatica_mca)
+                          const claseInfo = CLASES_NORMATIVAS[claseKey] || CLASES_NORMATIVAS.cumple
+                          const pColor = isInfra ? '#ec4899' : claseInfo.color
+                          return (
+                            <tr key={codigo}>
+                              <td className="font-mono" style={{ fontSize: 12 }}>{codigo}</td>
+                              <td>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <div style={{
+                                    width: `${Math.min(100, (res.presion_mca / 50) * 100)}%`,
+                                    maxWidth: 120, height: 6, borderRadius: 3,
+                                    background: pColor,
+                                    minWidth: 4,
+                                  }} />
+                                  <span style={{ fontWeight: 600, color: pColor }}>
+                                    {fmtPresion(res.presion_mca)}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="text-muted">{res.cota_piezometrica ? `${res.cota_piezometrica} m` : '—'}</td>
+                              <td>
+                                {isInfra ? (
+                                  <span className="badge" style={{ background: '#ec4899', color: '#fff', border: 'none' }}>
+                                    {codigo.toUpperCase().startsWith('TAN') ? 'Tanque' : 'Fuente'}
+                                  </span>
+                                ) : (
+                                  <span className={`badge ${claseInfo.badgeClass}`} style={{ borderColor: claseInfo.color }}>
+                                    {claseInfo.label}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          )
+                        })}
                       </tbody>
                     </table>
                   ) : (

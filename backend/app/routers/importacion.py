@@ -87,9 +87,15 @@ MODEL_MAP = {
     "valvulas": Valvula, "tanques": Tanque, "fuentes": Fuente,
 }
 
+from app.models.usuarios import Usuario
+
 @router.delete("/vaciar/{tipo_layer}", status_code=204)
-async def vaciar_capa(tipo_layer: TipoLayer, db: AsyncSession = Depends(get_db)):
-    """Elimina TODOS los registros de una capa específica."""
+async def vaciar_capa(
+    tipo_layer: TipoLayer,
+    db: AsyncSession = Depends(get_db),
+    current_user: Usuario = Depends(require_role("admin")),
+):
+    """Elimina TODOS los registros de una capa específica (Requiere rol admin - H-04)."""
     layer_name = tipo_layer.value if isinstance(tipo_layer, Enum) else tipo_layer
     if layer_name not in MODEL_MAP:
         raise HTTPException(400, "Tipo de capa no válido")
@@ -402,8 +408,12 @@ async def importar_epanet(
             start_pt = node_coords.get(v.start_node_name, Point(0, 0))
             obj = Valvula(
                 codigo=name,
-                tipo=v.valve_type,
+                tipo=v.valve_type or "PRV",
                 diametro_mm=v.diameter * 1000 if v.diameter else 0,
+                cota_msnm=0.0,
+                presion_setting=getattr(v, "initial_setting", None),
+                nodo_inicio=v.start_node_name,
+                nodo_fin=v.end_node_name,
                 geom=from_shape(start_pt, srid=4326),
                 usuario_id=current_user.id
             )

@@ -73,6 +73,9 @@ async def crear_y_ejecutar_simulacion(
         sim.nodos_criticos       = stats["nodos_criticos"]
         sim.nodos_total          = stats["nodos_total"]
         sim.tuberias_total       = stats["tuberias_total"]
+        sim.pct_cumplimiento_ras = stats.get("pct_cumplimiento_ras", 100.0)
+        sim.cumple_art61         = stats.get("cumple_art61", True)
+        sim.cumple_art62         = stats.get("cumple_art62", True)
         sim.fecha_fin_ejecucion  = datetime.now(timezone.utc)
         sim.duracion_calculo_seg = round(time.perf_counter() - t_start, 2)
 
@@ -134,7 +137,44 @@ async def exportar_inp(
     _=CanView,
 ):
     """
-    Exporta la red en formato EPANET .INP para uso externo.
-    (Pendiente Fase 5.2 — requiere serialización completa de la red)
+    Exporta la red en formato EPANET .INP usando unidades LPS y fórmula Hazen-Williams (H-10).
     """
-    raise HTTPException(501, "Exportación EPANET .INP disponible en Fase 5.2")
+    import tempfile
+    import os
+    from fastapi.responses import FileResponse
+    from app.services.wntr_service import _build_db_model, _build_demo_model
+    from app.models.red import Tuberia, Nodo, Tanque, Fuente, Dano, Valvula
+    from sqlalchemy import select
+    import wntr
+
+    tuberias = (await db.execute(select(Tuberia))).scalars().all()
+    nodos    = (await db.execute(select(Nodo))).scalars().all()
+    tanques  = (await db.execute(select(Tanque))).scalars().all()
+    fuentes  = (await db.execute(select(Fuente))).scalars().all()
+    danos    = (await db.execute(select(Dano))).scalars().all()
+    valvulas = (await db.execute(select(Valvula))).scalars().all()
+
+    config = {"duracion_horas": 24, "paso_tiempo_min": 60}
+    if not nodos or not tuberias:
+        wn = _build_demo_model(config)
+    else:
+        wn = _build_db_model(tuberias, nodos, tanques, fuentes, danos, valvulas, config)
+
+    wn.options.hydraulic.headloss = "H-W"
+    wn.options.hydraulic.inpfile_units = "LPS"
+
+    with tempfile.NamedTemporaryFile(suffix=".inp", delete=False) as tmp:
+        tmp_path = tmp.name
+
+    try:
+        wntr.network.write_inpfile(wn, tmp_path, units="LPS")
+    except Exception as e:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise HTTPException(500, f"Error al generar archivo EPANET .INP: {str(e)}")
+
+    return FileResponse(
+        tmp_path,
+        media_type="text/plain",
+        filename=f"red_acueducto_labateca_sim_{sim_id}.inp"
+    )

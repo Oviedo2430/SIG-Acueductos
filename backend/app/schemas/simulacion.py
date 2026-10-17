@@ -28,6 +28,9 @@ class SimulacionResponse(BaseModel):
     nodos_criticos: Optional[int] = None
     nodos_total: Optional[int] = None
     tuberias_total: Optional[int] = None
+    pct_cumplimiento_ras: Optional[float] = 100.0
+    cumple_art61: Optional[bool] = True
+    cumple_art62: Optional[bool] = True
     mensaje_error: Optional[str] = None
     fecha_creacion: Optional[datetime] = None
     fecha_fin_ejecucion: Optional[datetime] = None

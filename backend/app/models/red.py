@@ -65,6 +65,8 @@ class Valvula(_AuditMixin, Base):
     diametro_mm     = Column(Float)
     cota_msnm       = Column(Float)
     presion_setting = Column(Float)
+    nodo_inicio     = Column(String(50), nullable=True)
+    nodo_fin        = Column(String(50), nullable=True)
     tuberia_id      = Column(Integer, ForeignKey("gis.tuberias.id", ondelete="SET NULL"), nullable=True)
     observaciones   = Column(String(500))
 

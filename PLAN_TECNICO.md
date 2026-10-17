@@ -449,6 +449,11 @@ git push → GitHub (rama main)
 | **9** | **Control de Pérdidas (Caudal Mínimo Nocturno)**: Ingreso de lecturas de macromedidor a las 3:00 a.m. para cálculo de ANC y Fugas Físicas. | ✅ Completada |
 | **10** | **Simulación con Fugas (WNTR)**: Distribución automática de fugas calculadas como "Emisores" en la simulación hidráulica para reflejar caídas de presión reales. | ✅ Completada |
 
+### VERSIÓN 2.1 (Atención de Observaciones y Auditoría Técnica - Octubre 2026)
+| Fase | Descripción | Estado |
+|---|---|---|
+| **11** | **Atención de Observaciones de Auditoría Técnica**: <br>• **Normativa RAS:** Implementación de evaluación técnica de presiones según Res. 0330/2017 y 0799/2021 (Art. 61: mínima dinámica $\ge 10$ m.c.a., Art. 62: máxima estática $\le 50$ m.c.a. con tolerancias). <br>• **Topología Hidráulica:** Eliminación de nodos fantasma con cota 0; cálculo de cota de terreno realista para extremos sueltos evitando sobrepresiones artificiales de 1.660 m.c.a.<br>• **Válvulas y Tanques:** Inclusión de válvulas reguladoras (PRV) y tanques reales en la construcción del grafo WNTR con nodos inicial/final.<br>• **Seguridad:** Cierre de endpoint `DELETE /vaciar` exigiendo rol de administrador (`require_role("admin")`), control de `/docs` según entorno y creación de usuario operador.<br>• **Formularios y Exportación:** Corrección de campos obligatorios en formulario de tanques (`cota_fondo_msnm` y `cota_techo_msnm`), corrección de ruta de exportación Excel de catastro, y exportación `.inp` fijando unidades SI (`LPS`) y Hazen-Williams.<br>• **Rigor Metrológico y Presentación:** Eliminación de falsa precisión (redondeo a enteros en m.c.a. coherente con RMSE de $2.77$ m.c.a.), rotulación del módulo de pérdidas acorde a la realidad de Labateca y eliminación del modo demo ficticio. | ✅ Completada |
+
 ---
 
 ## 12. CÓMO RETOMAR EL DESARROLLO

@@ -6,6 +6,7 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { useMapStore, LAYERS } from '../../store/mapStore'
 import api from '../../services/api'
 import { useAuthStore } from '../../store/authStore'
+import { getPresionColor } from '../../lib/normativa'
 
 // Coordenadas del casco urbano de Labateca
 const LABATECA_CENTER = [-72.4845, 7.3375]
@@ -575,7 +576,7 @@ export default function MapViewer({ onFeatureClick }) {
           if (codigo.toUpperCase().startsWith('EMB') || codigo.toUpperCase().startsWith('FUE')) return;
           hasNodeData = true
           matchNodes.push(String(codigo))
-          matchNodes.push(p < 5 ? '#ef4444' : p < 10 ? '#f97316' : p < 20 ? '#eab308' : p < 35 ? '#22c55e' : '#3b82f6')
+          matchNodes.push(getPresionColor(p))
         })
         matchNodes.push('#94a3b8') // Color gris si no tiene presión (Sin Datos)
         

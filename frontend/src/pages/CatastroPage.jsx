@@ -248,11 +248,11 @@ export default function CatastroPage() {
         <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
           <button
             className="btn btn-ghost btn-sm"
-            onClick={() => api.get(`/${activeLayer}/exportar`, { params: { formato: 'excel' }, responseType: 'blob' })
+            onClick={() => api.get(`/reportes/exportar/${activeLayer}`, { params: { formato: 'excel' }, responseType: 'blob' })
               .then(r => {
                 const url = URL.createObjectURL(r.data)
                 Object.assign(document.createElement('a'), { href: url, download: `${activeLayer}.xlsx` }).click()
-              }).catch(() => alert('Exportación no disponible aún'))
+              }).catch(() => alert('Exportación no disponible — verifique la conexión al backend'))
             }
           >
             📥 Exportar Excel

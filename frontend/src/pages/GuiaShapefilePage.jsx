@@ -112,7 +112,7 @@ export default function GuiaShapefilePage() {
       <div className="alert alert-warning" style={{ marginBottom: '1.5rem' }}>
         <span style={{ fontSize: '1.2rem' }}>⚠️</span>
         <div>
-          <strong>Sistema de Coordenadas Requerido:</strong> Los shapefiles deben estar en <strong>SIRGAS 2000 / CTM-12 (EPSG:9377)</strong>.
+          <strong>Sistema de Coordenadas Requerido:</strong> Los shapefiles deben estar proyectados en el sistema oficial de Colombia <strong>MAGNA-SIRGAS 2018 / Origen-Nacional (EPSG:9377)</strong>.
           El sistema los transformará automáticamente a WGS84 (EPSG:4326) al importar.
           Verifique el CRS en QGIS: <em>Propiedades de capa → Información → SRC</em>.
         </div>
@@ -187,7 +187,7 @@ export default function GuiaShapefilePage() {
       <div className="grid grid-2" style={{ marginTop: '1.5rem', gap: '1rem' }}>
         <div className="card">
           <div className="card-title" style={{ marginBottom: 10 }}>✅ Pasos para preparar el shapefile</div>
-          {['1. Abrir el shapefile en QGIS y verificar que el CRS sea EPSG:9377 (CTM-12)',
+          {['1. Abrir el shapefile en QGIS y verificar que el CRS sea EPSG:9377 (Origen-Nacional)',
             '2. Verificar que todos los nombres de campo coincidan exactamente (mayúsculas)',
             '3. Verificar que las geometrías sean válidas: sin autointercepciones, sin duplicados',
             '4. Rellenar al menos los campos marcados como Obligatorios',

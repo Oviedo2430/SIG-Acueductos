@@ -131,12 +131,12 @@ function makeGauge(score) {
       axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
       detail: {
         valueAnimation: true,
-        formatter: '{value}',
-        color, fontSize: 32, fontWeight: 'bold',
+        formatter: '{value}%',
+        color, fontSize: 28, fontWeight: 'bold',
         offsetCenter: [0, '0%'],
       },
-      title: { show: true, offsetCenter: [0, '30%'], color: '#94a3b8', fontSize: 12 },
-      data: [{ value: score, name: 'Salud de la red' }],
+      title: { show: true, offsetCenter: [0, '35%'], color: '#94a3b8', fontSize: 11 },
+      data: [{ value: score, name: 'Cumplimiento RAS' }],
     }],
   }
 }
@@ -161,15 +161,16 @@ function makePerdidasHistorial(lecturas) {
   }
 }
 
-// ── Cálculo de score de salud de la red ──────────────────────
+// ── Cálculo de score de cumplimiento normativo RAS (Res. 0330 / 0799) ──
 function calcHealthScore(stats) {
-  if (!stats) return 75
+  if (!stats) return 100
+  const sim = stats.ultima_simulacion
+  if (sim && sim.pct_cumplimiento_ras !== undefined && sim.pct_cumplimiento_ras !== null) {
+    return Math.round(sim.pct_cumplimiento_ras)
+  }
   const total = Object.values(stats.estados_tuberias || {}).reduce((a, b) => a + b, 0) || 1
   const malos = (stats.estados_tuberias?.Malo || 0) + (stats.estados_tuberias?.Critico || 0)
-  const pctMalos = malos / total
-  const sim = stats.ultima_simulacion
-  const pctCriticos = sim ? (sim.nodos_criticos || 0) / (sim.nodos_total || 1) : 0
-  return Math.max(0, Math.round(100 - pctMalos * 50 - pctCriticos * 30))
+  return Math.max(0, Math.round(100 - (malos / total) * 100))
 }
 
 // ── Componente de exportación ─────────────────────────────────
@@ -240,11 +241,19 @@ export default function DashboardPage() {
   if (isError) {
     return (
       <div className="page animate-fade">
-        <div className="page-header"><h1 className="page-title">📊 Dashboard</h1></div>
-        <div className="alert alert-warning" style={{ marginBottom: '1rem' }}>
-          ⚠️ No se pudo conectar al backend. Mostrando datos de demostración.
+        <div className="page-header"><h1 className="page-title">📊 Dashboard de Red</h1></div>
+        <div className="card" style={{ textAlign: 'center', padding: '3rem 1.5rem', marginTop: '1rem' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔌</div>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem', color: '#f0f6ff' }}>
+            No se pudo conectar con el servidor
+          </h2>
+          <p className="text-muted" style={{ maxWidth: 480, margin: '0 auto 1.5rem', fontSize: '0.9rem' }}>
+            Verifique que el backend de FastAPI esté en ejecución y tenga acceso a la base de datos de Labateca.
+          </p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            🔄 Reintentar conexión
+          </button>
         </div>
-        <DashboardContent stats={DEMO_STATS_FE} healthScore={75} lastUpdate={lastUpdate} />
       </div>
     )
   }
@@ -326,10 +335,10 @@ function DashboardContent({ stats, healthScore, lecturas, onOpenModal, onOpenHis
       {/* Fila 1: Gauge + Estado tuberías + Materiales */}
       <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
         <div className="card" style={{ padding: '0.75rem' }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', marginBottom: 4 }}>Salud de la red</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center', marginBottom: 4 }}>Cumplimiento RAS 0330</div>
           <ReactECharts option={makeGauge(healthScore)} style={{ height: 160 }} />
           <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)' }}>
-            {healthScore >= 80 ? '✅ Excelente' : healthScore >= 60 ? '⚠️ Regular' : '❌ Crítica'}
+            {healthScore >= 90 ? '✅ Cumplimiento Pleno' : healthScore >= 75 ? '⚠️ Con Tolerancias' : '❌ Fuera de Norma'}
           </div>
         </div>
         <div className="card" style={{ padding: '0.75rem' }}>
@@ -349,7 +358,10 @@ function DashboardContent({ stats, healthScore, lecturas, onOpenModal, onOpenHis
       {/* Control de Pérdidas (Fase 9) */}
       <div className="card" style={{ padding: '1rem', marginBottom: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <div style={{ fontWeight: 600, color: '#f0f6ff' }}>Control de Pérdidas (Caudal Mínimo Nocturno)</div>
+          <div>
+            <div style={{ fontWeight: 600, color: '#f0f6ff' }}>Control de Pérdidas y Daños (Estimación Teórica)</div>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>* El método nocturno IWA requiere macromedición continua y servicio presurizado 24/7</div>
+          </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn btn-outline btn-sm" onClick={onOpenHistorial}>📋 Historial</button>
             <button className="btn btn-primary btn-sm" onClick={onOpenModal}>➕ Registrar Lectura</button>

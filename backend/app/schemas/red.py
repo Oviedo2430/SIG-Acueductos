@@ -110,6 +110,8 @@ class ValvulaBase(BaseModel):
     diametro_mm: Optional[float] = None
     cota_msnm: Optional[float] = None
     presion_setting: Optional[float] = None
+    nodo_inicio: Optional[str] = None
+    nodo_fin: Optional[str] = None
     observaciones: Optional[str] = None
 
 class ValvulaCreate(ValvulaBase):
@@ -121,6 +123,8 @@ class ValvulaUpdate(BaseModel):
     diametro_mm: Optional[float] = None
     cota_msnm: Optional[float] = None
     presion_setting: Optional[float] = None
+    nodo_inicio: Optional[str] = None
+    nodo_fin: Optional[str] = None
     observaciones: Optional[str] = None
     geom: Optional[GeomInput] = None
 

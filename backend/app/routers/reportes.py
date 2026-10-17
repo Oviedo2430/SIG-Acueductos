@@ -126,11 +126,15 @@ async def dashboard_stats(db: AsyncSession = Depends(get_db), _=CanView):
             "nodos_criticos": ultima_sim.nodos_criticos,
             "nodos_total": ultima_sim.nodos_total,
             "tuberias_total": ultima_sim.tuberias_total,
+            "pct_cumplimiento_ras": getattr(ultima_sim, "pct_cumplimiento_ras", 100.0) or 100.0,
+            "cumple_art61": getattr(ultima_sim, "cumple_art61", True),
+            "cumple_art62": getattr(ultima_sim, "cumple_art62", True),
         }
         if ultima_sim.resultados_nodos:
             presiones_nodos = {
                 k: v.get("presion_mca", 0)
                 for k, v in ultima_sim.resultados_nodos.items()
+                if not (k.upper().startswith("EMB") or k.upper().startswith("FUE") or k.upper().startswith("TAN") or k.startswith("AUTO-NOD") or k.startswith("NOD-EXT"))
             }
         
         velocidades_tuberias = {}
